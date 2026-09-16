@@ -1,0 +1,73 @@
+# Mide la horquilla real de acciones US, con el mercado abierto.
+#
+# ## Por que en Actions y no en el portatil
+#
+# Hay que muestrear durante media hora con el mercado abierto, o sea entre las
+# 13:30 y las 20:00 UTC. Depender de que el portatil este encendido a esa hora
+# es depender de una casualidad; el job corre igual.
+#
+# ## Por que no todos los dias
+#
+# Una vez basta para calibrar un modelo de costes, y repetirlo a diario gastaria
+# peticiones de Tiingo (500/dia) sin aportar nada. Se lanza a mano cuando haga
+# falta recalibrar, o cuando se sospeche que la liquidez ha cambiado.
+
+name: Horquilla US
+
+on:
+  workflow_dispatch:
+    inputs:
+      instantaneas:
+        description: "Cuantas instantaneas tomar"
+        default: "60"
+      pausa:
+        description: "Segundos entre instantaneas"
+        default: "30"
+
+permissions:
+  contents: write
+
+jobs:
+  medir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -e .
+
+      - name: Comprobar que el mercado esta abierto
+        # 13:30-20:00 UTC. Fuera de esa franja no hay libro que medir y el job
+        # se para aqui en vez de gastar media hora para nada.
+        run: |
+          h=$(date -u +%H%M)
+          if [ "$h" -lt 1330 ] || [ "$h" -gt 1930 ]; then
+            echo "::error::son las $h UTC; el mercado US cotiza de 13:30 a 20:00"
+            exit 1
+          fi
+          echo "hora UTC $h: dentro de sesion"
+
+      - name: Muestrear la horquilla
+        env:
+          TIINGO_TOKEN: ${{ secrets.TIINGO_TOKEN }}
+        run: |
+          if [ -z "$TIINGO_TOKEN" ]; then
+            echo "::error::falta el secreto TIINGO_TOKEN"
+            exit 1
+          fi
+          python scripts/medir_spread_us.py \
+            --instantaneas "${{ inputs.instantaneas }}" \
+            --pausa "${{ inputs.pausa }}"
+
+      - name: Guardar la medicion
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add data/experimentos/spread_us.json
+          git diff --staged --quiet || git commit -m "chore: horquilla US medida $(date -u +%Y-%m-%d)"
+          git push
