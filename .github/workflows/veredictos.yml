@@ -1,0 +1,105 @@
+# Juzga una hipotesis pre-registrada y commitea su veredicto.
+#
+# ## Por que no hay mas input que "cual"
+#
+# El unico parametro es QUE hipotesis juzgar. Ni horizonte, ni tramos, ni
+# semilla, ni numero de simulaciones: todo eso sale del pre-registro sellado
+# en `hipotesis/*.toml` y de las constantes del juez, y ninguno de los dos se
+# toca desde un formulario.
+#
+# No es purismo. El proyecto cuenta los contrastes ANTES de medir para que el
+# Deflated Sharpe signifique algo (`core.papel.contador`), y el propio B1
+# escribe que cambiarle una cifra despues de medir lo quema. Un formulario con
+# semilla editable es una maquina de repetir hasta que salga: se prueban veinte
+# semillas, se publica la que cruza el percentil 95 y las diecinueve restantes
+# no las cuenta nadie. Aqui se puede lanzar y se puede mirar; no se puede
+# afinar.
+#
+# ## Por que aqui y no en el portatil
+#
+# Para que MoonRocket -o cualquiera- pueda disparar un juicio y leer el
+# resultado sin que este encendida una maquina concreta. El veredicto se
+# commitea, asi que `git log data/experimentos/` es el historial de cuando se
+# juzgo cada hipotesis, igual que el de `spread_us.json` es la serie de la
+# horquilla.
+#
+# ## Requisito de datos
+#
+# El runner no tiene `data/bigrocketcaps.duckdb` (222 MB, fuera del repo), asi
+# que `juzgar_*.py` lee `eventos_societarios` y `sector_empresa` del lago. Si
+# no estan subidas, el juez para con el comando exacto para subirlas.
+#
+# ## Un solo disparador, a proposito
+#
+# Solo `workflow_dispatch`. Si algun dia se anade `schedule` o `push`, hay que
+# dar valor por defecto a `inputs.hipotesis` en la propia llamada: en esos
+# disparos `inputs.*` llega VACIO aunque tenga `default:`. Es el fallo que se
+# arreglo en el commit cb7e159, y se repetiria igual aqui.
+
+name: Veredictos
+
+on:
+  workflow_dispatch:
+    inputs:
+      hipotesis:
+        description: "Que hipotesis pre-registrada juzgar"
+        type: choice
+        options:
+          - B1
+        default: B1
+
+permissions:
+  contents: write
+
+# Dos juicios a la vez se pisarian al commitear. No se cancela el que ya
+# corre: un veredicto a medias no vale, y son minutos, no horas.
+concurrency:
+  group: veredictos
+  cancel-in-progress: false
+
+jobs:
+  juzgar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -e .
+
+      - name: Juzgar
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$HF_TOKEN" ]; then
+            echo "::error::falta el secreto HF_TOKEN; el lago es privado"
+            exit 1
+          fi
+          id_min=$(echo "${{ inputs.hipotesis }}" | tr 'A-Z' 'a-z')
+          juez="scripts/juzgar_${id_min}.py"
+          if [ ! -f "$juez" ]; then
+            echo "::error::no hay juez para ${{ inputs.hipotesis }} ($juez)"
+            exit 1
+          fi
+          echo "ID_MIN=$id_min" >> "$GITHUB_ENV"
+          python "$juez"
+
+      - name: Guardar el veredicto
+        run: |
+          set -euo pipefail
+          veredicto="data/experimentos/veredicto_${ID_MIN}.json"
+          test -f "$veredicto"
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add "$veredicto"
+          # El veredicto va en el asunto: asi `git log --oneline` se lee como
+          # el historial de hipotesis muertas sin abrir un solo fichero.
+          fallo=$(python -c "import json,sys;d=json.load(open(sys.argv[1]));print('REFUTADA' if d['refutada_sin_coste'] else 'SOBREVIVE')" "$veredicto")
+          git diff --staged --quiet || git commit -m "chore: veredicto ${{ inputs.hipotesis }} · $fallo · $(date -u +%Y-%m-%d)"
+          git pull --rebase
+          git push

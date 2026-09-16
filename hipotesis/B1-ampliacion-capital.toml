@@ -6,7 +6,14 @@
 
 id = "B1"
 titulo = "Una ampliación de capital anunciada produce exceso NEGATIVO a corto plazo"
-estado = "DRAFT"
+# DRAFT -> REFUTADA el 2026-09-16, tras medirla: `data/experimentos/
+# veredicto_b1.json`. Cambiar ESTE campo no quema la hipotesis y el resto
+# del fichero sigue intacto: lo que la quemaria es mover una cifra, un
+# criterio o el mecanismo DESPUES de ver el resultado, que es justo lo que
+# convertiria una prediccion en una descripcion. El estado no predice nada;
+# dice si ya se miro. Y el veredicto en si no vive aqui sino en el JSON,
+# fechado y firmado por el commit que lo escribio.
+estado = "REFUTADA"
 autor = "fernando"
 escrita = "2026-09-16"
 

@@ -62,6 +62,30 @@ MUESTRA_MINIMA = 100
 COSTE_SOBRE_OBJETIVO_MAX = 0.15
 
 
+def origen_datos(
+    base: Path, con_lago: duckdb.DuckDBPyConnection,
+) -> tuple[duckdb.DuckDBPyConnection, str, str, str]:
+    """De donde salen `eventos_societarios` y `sector_empresa`.
+
+    La base local si esta -es lo que hay en el portatil, y leerla no cuesta
+    red-, y el lago si no. Esa es la unica diferencia entre juzgar aqui y
+    juzgar en un runner de GitHub: el veredicto no puede depender de que una
+    maquina concreta este encendida, o la hipotesis solo seria refutable por
+    su autor.
+
+    No se pasan anyos a `lago.leer`: son 1,6 M de filas para todo el historico
+    y pedir el comodin evita que falte un anyo en el lago y reviente la
+    lectura entera por un fichero que ni siquiera se iba a usar.
+    """
+    if base.exists():
+        return (duckdb.connect(str(base), read_only=True),
+                "eventos_societarios", "sector_empresa", f"base local {base}")
+    return (con_lago,
+            lago.leer(con_lago, "eventos_societarios"),
+            lago.leer(con_lago, "sector_empresa"),
+            "lago remoto")
+
+
 def cargar_precios(con_lago: duckdb.DuckDBPyConnection, anyos: list[int]) -> pl.DataFrame:
     expr = lago.leer(con_lago, "ohlcv", anyos)
     return con_lago.execute(
@@ -71,18 +95,24 @@ def cargar_precios(con_lago: duckdb.DuckDBPyConnection, anyos: list[int]) -> pl.
 
 
 def cargar_eventos_validacion(
-    con_local: duckdb.DuckDBPyConnection, precios: pl.DataFrame,
+    con: duckdb.DuckDBPyConnection, precios: pl.DataFrame,
+    *, tabla_eventos: str, tabla_sectores: str,
 ) -> tuple[pl.DataFrame, dict]:
     """Eventos de B1 restringidos a la mitad `validacion` de sectores.
 
     Devuelve (eventos, diagnostico) para poder informar cuantos se caen en
     cada puerta -sector, sin precio, sin 60 velas previas- y no solo el total.
+
+    Las dos tablas llegan como EXPRESION SQL, no como nombre, para que la
+    misma consulta sirva leyendo la base local o leyendo el lago: ahi son
+    `read_parquet(...)`, y quien juzga no tiene por que saber cual de las dos
+    esta mirando. Ver `origen_datos()`.
     """
-    crudos = con_local.execute(
-        "SELECT e.cik, e.ticker, e.presentado, e.tras_cierre, s.sector "
-        "FROM eventos_societarios e JOIN sector_empresa s ON s.cik = e.cik "
-        "WHERE e.clase = ? AND e.presentado BETWEEN ? AND ? "
-        "AND e.ticker IS NOT NULL AND e.ticker != ''",
+    crudos = con.execute(
+        f"SELECT e.cik, e.ticker, e.presentado, e.tras_cierre, s.sector "
+        f"FROM {tabla_eventos} e JOIN {tabla_sectores} s ON s.cik = e.cik "
+        f"WHERE e.clase = ? AND e.presentado BETWEEN ? AND ? "
+        f"AND e.ticker IS NOT NULL AND e.ticker != ''",
         [CLASE, VALIDACION_DESDE, VALIDACION_HASTA],
     ).pl()
 
@@ -197,14 +227,28 @@ def main() -> int:
                    default=Path("data/experimentos/veredicto_b1.json"))
     a = p.parse_args()
 
-    con_local = duckdb.connect(a.base, read_only=True)
     con_lago = lago.conectar()
+    con_datos, tabla_eventos, tabla_sectores, origen = origen_datos(
+        Path(a.base), con_lago)
+    print(f"eventos y sectores: {origen}")
 
     print("cargando precios stock_us 1d...")
     precios = cargar_precios(con_lago, list(range(a.anyo_desde, a.anyo_hasta + 1)))
     print(f"  {precios.height:,} velas, {precios['activo'].n_unique():,} tickers")
 
-    eventos, diagnostico = cargar_eventos_validacion(con_local, precios)
+    try:
+        eventos, diagnostico = cargar_eventos_validacion(
+            con_datos, precios,
+            tabla_eventos=tabla_eventos, tabla_sectores=tabla_sectores)
+    except duckdb.Error as err:
+        raise SystemExit(
+            f"""no se pudieron leer los eventos en {origen}: {err}
+
+Si esto corre fuera del portatil, las dos tablas tienen que estar en el
+lago. Se suben una vez con:
+  python scripts/exportar_lago.py --solo eventos_societarios,sector_empresa
+  python scripts/publicar_lago.py"""
+        ) from err
     print("diagnostico del universo:", json.dumps(diagnostico, indent=2, ensure_ascii=False))
 
     if eventos.height < MUESTRA_MINIMA:

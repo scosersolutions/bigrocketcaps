@@ -47,6 +47,13 @@ COLUMNA_TIEMPO = {
     "calendario": "fecha",
     "decisions": "ts",
     "eventos": "aceptado",
+    # De bigrocketcaps, no de MoonRocket: sin ellas el lago no puede
+    # alimentar a `scripts/juzgar_*.py` fuera de este portatil, y el juicio
+    # de una hipotesis no puede depender de que una maquina concreta este
+    # encendida. Se exportan con `--solo`; las demas tablas de brc siguen
+    # sin declarar porque todavia no las necesita nadie remoto.
+    "eventos_societarios": "presentado",
+    "sector_empresa": "ingerido",
     "experimentos": "ts",
     "fundamentales": "publicado",
     "funding": "ts",
