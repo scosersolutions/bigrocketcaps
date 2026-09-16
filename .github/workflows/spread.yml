@@ -68,6 +68,8 @@ jobs:
       - name: Muestrear la horquilla
         env:
           TIINGO_TOKEN: ${{ secrets.TIINGO_TOKEN }}
+          CONTROL_CENTER_URL: ${{ secrets.CONTROL_CENTER_URL }}
+          CONTROL_CENTER_TOKEN: ${{ secrets.CONTROL_CENTER_TOKEN }}
         run: |
           if [ -z "$TIINGO_TOKEN" ]; then
             echo "::error::falta el secreto TIINGO_TOKEN"
@@ -78,7 +80,12 @@ jobs:
           # moria con `invalid int value: ''` (ejecucion 35133028946, del
           # 2026-09-16). El valor por defecto va aqui tambien, que es el
           # unico sitio por el que pasan los dos disparos.
-          python scripts/medir_spread_us.py \
+          # El anillo de `con_control` no puede impedir medir: sin las dos
+          # variables de arriba ejecuta el comando y no reporta nada.
+          python scripts/con_control.py --slug brc-horquilla \
+            --resultado horquilla=data/experimentos/spread_us.json \
+            --resumen "{horquilla.instantaneas_pedidas} instantaneas de {horquilla.fuente}" \
+            -- python scripts/medir_spread_us.py \
             --instantaneas "${{ inputs.instantaneas || '60' }}" \
             --pausa "${{ inputs.pausa || '30' }}"
 

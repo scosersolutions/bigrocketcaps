@@ -74,6 +74,8 @@ jobs:
       - name: Juzgar
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          CONTROL_CENTER_URL: ${{ secrets.CONTROL_CENTER_URL }}
+          CONTROL_CENTER_TOKEN: ${{ secrets.CONTROL_CENTER_TOKEN }}
         run: |
           set -euo pipefail
           if [ -z "$HF_TOKEN" ]; then
@@ -87,7 +89,13 @@ jobs:
             exit 1
           fi
           echo "ID_MIN=$id_min" >> "$GITHUB_ENV"
-          python "$juez"
+          # Envuelto en `con_control`: reporta al Centro de Control si hay
+          # credenciales, y si no las hay juzga igual. Que alguien lo este
+          # mirando no es asunto del juez.
+          python scripts/con_control.py --slug brc-veredictos \
+            --resultado "veredicto=data/experimentos/veredicto_${id_min}.json" \
+            --resumen "${{ inputs.hipotesis }}: exceso {veredicto.exceso_medio_pct}% en {veredicto.n} eventos, percentil {veredicto.percentil_azar}" \
+            -- python "$juez"
 
       - name: Guardar el veredicto
         run: |
