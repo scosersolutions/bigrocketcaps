@@ -184,6 +184,8 @@ class CostesPorAccion(ModeloCostes):
     spread_bps: float = 3.0
     impacto_k: float = IMPACTO_K
     precio_referencia: float = 100.0
+    spread_medido: bool = False
+    origen_spread: str = "supuesto"
 
     def __post_init__(self) -> None:
         if self.por_accion < 0 or self.minimo_orden < 0:

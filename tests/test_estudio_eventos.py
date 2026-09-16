@@ -87,6 +87,22 @@ class TestMedicion:
         r = medir(ev, _precios(rets), horizonte=5)
         assert "2023-2024" in r.por_tramo
 
+    def test_los_tramos_se_pueden_pedir_a_medida(self):
+        """B1 compara 2018-2021 contra 2022-2024, no el reparto por defecto.
+
+        Todos los eventos de la muestra caen en 2024, así que solo se
+        rellena el tramo que los contiene -mismo criterio que
+        `test_se_reparte_por_tramos_de_años`-; lo que prueba este test es que
+        la etiqueta sea la del reparto A MEDIDA (2022-2024) y no la del
+        reparto por defecto (2023-2024), que solapa pero no es igual.
+        """
+        rets = {a: [0.0] * 11 for a in ("A", "B", "C")}
+        ev = pl.DataFrame({"ticker": ["A"], "presentado": [date(2024, 1, 3)],
+                           "tras_cierre": [False]})
+        r = medir(ev, _precios(rets), horizonte=5,
+                  tramos=((2018, 2021), (2022, 2024)))
+        assert set(r.por_tramo) == {"2022-2024"}
+
     def test_sin_eventos_no_se_inventa_un_resultado(self):
         with pytest.raises(EstudioError):
             medir(pl.DataFrame(), _precios({"A": [0.0] * 11}), horizonte=5)

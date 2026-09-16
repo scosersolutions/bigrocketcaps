@@ -1,0 +1,66 @@
+{
+  "hipotesis": "B1",
+  "medido": "2026-09-16T20:56:58.617337+00:00",
+  "n": 3852,
+  "n_empresas": 671,
+  "exceso_medio_pct": 0.2013,
+  "exceso_mediano_pct": 0.0935,
+  "t": 1.397,
+  "por_tramo": {
+    "2018-2021": 0.464,
+    "2022-2024": -0.17
+  },
+  "percentil_azar": 69.5,
+  "criterios": {
+    "1_exceso_negativo": {
+      "supera": false,
+      "valor": "+0.2013%"
+    },
+    "2_supera_el_azar": {
+      "supera": false,
+      "valor": "percentil 69.5"
+    },
+    "3_sobrevive_al_retraso_de_una_sesion": {
+      "supera": false,
+      "valor": "+0.2622%"
+    },
+    "4_estable_entre_tramos": {
+      "supera": false,
+      "valor": "{'2018-2021': 0.464, '2022-2024': -0.17}"
+    },
+    "5_al_menos_20_empresas": {
+      "supera": true,
+      "valor": "671 empresas"
+    },
+    "6_mediana_no_es_cola": {
+      "supera": true,
+      "valor": "mediana +0.0935% / media +0.2013%"
+    }
+  },
+  "refutada_sin_coste": true,
+  "diagnostico_universo": {
+    "eventos_crudos": 9477,
+    "empresas_crudas": 1779,
+    "tras_particion_sectores": 4164,
+    "empresas_tras_particion": 797,
+    "reparto_validacion": [
+      "BusEq",
+      "Durbl",
+      "Enrgy",
+      "Manuf",
+      "Money",
+      "Telcm"
+    ],
+    "reparto_exploracion": [
+      "Chems",
+      "Hlth",
+      "NoDur",
+      "Other",
+      "Shops",
+      "Utils"
+    ],
+    "tras_60_velas_previas": 3852,
+    "empresas_finales": 671
+  },
+  "coste": "PENDIENTE: falta calibrar con data/experimentos/spread_us.json"
+}

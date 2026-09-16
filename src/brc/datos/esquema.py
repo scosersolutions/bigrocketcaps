@@ -113,6 +113,20 @@ CREATE TABLE IF NOT EXISTS tickers (
     source      VARCHAR NOT NULL,
     PRIMARY KEY (ticker, cik, comprobado)
 );
+
+-- Sector de cada empresa, para la valla exploracion/validacion de
+-- `brc.datos.particion`. `sector` es el codigo de industria de Fama-French
+-- (ver `brc.datos.sector`), sustituto de coste 0 de GICS: EDGAR da el SIC
+-- gratis y GICS es de pago. Una sola fila por CIK: el SIC no cambia con la
+-- fecha con la frecuencia que le importa a este reparto.
+CREATE TABLE IF NOT EXISTS sector_empresa (
+    cik       BIGINT  NOT NULL,
+    sic       BIGINT,
+    sector    VARCHAR NOT NULL,
+    ingerido  TIMESTAMPTZ NOT NULL,
+    source    VARCHAR NOT NULL,
+    PRIMARY KEY (cik)
+);
 """
 
 #: Tablas del núcleo que aquí NO se usan: son de perpetuos. Se declaran para

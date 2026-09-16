@@ -88,11 +88,17 @@ def medir(
     precios: pl.DataFrame,
     *,
     horizonte: int,
+    tramos: tuple[tuple[int, int], ...] = ((2018, 2020), (2021, 2022), (2023, 2024)),
 ) -> Resultado:
     """Exceso sobre la mediana del universo, a `horizonte` sesiones.
 
     `eventos` necesita (ticker, presentado, tras_cierre).
     `precios` necesita (activo, fecha, close).
+    `tramos` son los rangos de años (inclusive) sobre los que se reparte
+    `por_tramo`. El valor por defecto es el histórico del proyecto; una
+    hipótesis con un criterio de refutación sobre años distintos pasa los
+    suyos (p. ej. B1 compara 2018-2021 contra 2022-2024, no el reparto de
+    tres tramos por defecto).
     """
     if eventos.is_empty() or precios.is_empty():
         raise EstudioError("sin eventos o sin precios no hay nada que medir")
@@ -131,12 +137,12 @@ def medir(
     t = media / (sigma / (n ** 0.5)) if sigma > 0 and n > 1 else 0.0
 
     # Por tramos de años: un efecto que solo vive en una época no es un efecto.
-    tramos = {}
-    for desde, hasta in ((2018, 2020), (2021, 2022), (2023, 2024)):
+    por_tramo = {}
+    for desde, hasta in tramos:
         t_exc = j.filter(
             pl.col("entrada").dt.year().is_between(desde, hasta))["exceso"]
         if len(t_exc):
-            tramos[f"{desde}-{hasta}"] = round(float(t_exc.mean()), 3)
+            por_tramo[f"{desde}-{hasta}"] = round(float(t_exc.mean()), 3)
 
     return Resultado(
         n=n,
@@ -146,5 +152,5 @@ def medir(
         sigma_pct=round(sigma, 3),
         t=round(t, 3),
         ganadoras_pct=round(float((exc > 0).mean()) * 100, 2),
-        por_tramo=tramos,
+        por_tramo=por_tramo,
     )
