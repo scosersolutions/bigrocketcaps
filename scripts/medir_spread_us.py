@@ -77,6 +77,23 @@ def bps(bid: float, ask: float) -> float | None:
     return (ask - bid) / medio * 10_000
 
 
+def agregados(resumen: dict[str, dict]) -> dict[str, float]:
+    """Los dos numeros que resumen la horquilla de todo el universo.
+
+    Se escriben en el JSON en vez de dejarlos para quien lo lea por dos
+    motivos. Uno: son la entrada del modelo de costes -ver
+    `scripts/calibrar_costes_us.py`, que explica por que la MEDIANA de los p90
+    por activo y no el p90 de todo junto-. Y dos: al ser campos de primer
+    nivel se convierten en metricas con serie temporal en el Centro de
+    Control, que es justo la EVOLUCION por la que esto se mide a diario en vez
+    de una sola vez. Enterrados dentro de `activos` no serian ninguna de las
+    dos cosas.
+    """
+    p90s = [v["p90_bps"] for v in resumen.values()]
+    return {"mediana_de_p90s": round(statistics.median(p90s), 3),
+            "maximo_de_p90s": round(max(p90s), 3)}
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--instantaneas", type=int, default=60)
@@ -149,6 +166,7 @@ def main() -> int:
         "limitacion": ("es el spread de HOY; aplicarlo a un historico supone "
                        "que la liquidez no ha cambiado, y ha cambiado"),
         "instantaneas_pedidas": a.instantaneas,
+        **agregados(resumen),
         "activos": resumen,
     }, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"\nescrito en {a.salida}")

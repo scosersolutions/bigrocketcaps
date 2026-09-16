@@ -38,8 +38,13 @@ def calibrar(datos: dict) -> dict:
         raise ValueError(f"{ENTRADA} no tiene mediciones en 'activos'")
 
     p90s = [v["p90_bps"] for v in activos.values()]
-    mediana_de_p90s = round(statistics.median(p90s), 3)
-    maximo_de_p90s = round(max(p90s), 3)
+    # Los escribe `medir_spread_us.agregados()` desde el 2026-09-16. Se
+    # recalculan si no estan para poder leer una medicion anterior a ese
+    # campo, no porque haya dos criterios: el criterio es este, y esta
+    # explicado arriba.
+    mediana_de_p90s = datos.get("mediana_de_p90s",
+                               round(statistics.median(p90s), 3))
+    maximo_de_p90s = datos.get("maximo_de_p90s", round(max(p90s), 3))
     origen = (f"tiingo/iex p90 por activo, mediana de {len(p90s)} activos, "
              f"medido {datos.get('medido', '?')}")
 
