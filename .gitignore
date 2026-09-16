@@ -1,0 +1,64 @@
+# Secretos — nunca al repo
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+credentials*.json
+
+# Datos — pesados y regenerables
+# Git no desciende en un directorio excluido, asi que se excluye su
+# CONTENIDO y luego se readmite lo que si viaja al despliegue.
+data/*
+*.parquet
+*.duckdb
+*.duckdb.wal
+*.csv
+*.zip
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+
+# Logs
+logs/
+*.jsonl
+
+# Editor / SO
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+
+# El cuaderno se regenera con scripts/dashboard.py
+
+# ...pero el registro de predicciones SÍ se versiona: es la prueba de que cada
+# predicción se escribió antes que su resultado, y el histórico de commits le
+# da una segunda capa de inmutabilidad además de su cadena de hashes.
+
+# Lo que necesita el despliegue en la nube: 544 KB frente al 1,1 GB de la base
+
+
+# Lo unico de data/ que se versiona:
+#  - el registro de predicciones, que es la prueba del pre-registro
+#  - los 544 KB que necesita el despliegue en la nube (la base son 1,1 GB)
+!data/papel/
+!data/publico/
+data/cuaderno.html
+
+# El sitio generado SI se versiona: es lo que despliega Cloudflare Pages.
+
+# La regla *.jsonl de arriba es global y tapaba estos dos, que son
+# precisamente los que el trabajo diario tiene que poder commitear.
+# (sin comentario al final: gitignore no los admite en la misma linea
+#  y el patron pasaria a incluirlo, dejando de negar nada)
+!data/papel/*.jsonl
+!data/publico/*.jsonl

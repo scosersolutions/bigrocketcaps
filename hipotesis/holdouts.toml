@@ -1,0 +1,29 @@
+# Periodos reservados. Ningún juicio puede tocarlos sin decirlo.
+#
+# Un holdout escrito dentro de cada script es un holdout que el siguiente script
+# no conoce. Pasó en MoonRocket: tres scripts recortaban leyendo su propio
+# pre-registro y uno no, y el que no lo hacía juzgaba igual de bien. De 43.080
+# velas de BTCUSDT, 8.016 --el 18,6 %, casi un año-- se juzgaron dentro del
+# holdout sin que nada avisara.
+#
+# Este fichero es la declaración central. `core.backtest.validacion.validar()`
+# lo lee y se niega a juzgar con datos de dentro salvo que se le pase una
+# autorización explícita, que además queda anotada en la cadena.
+#
+# Cambiar una fecha de aquí NO es un ajuste de configuración: es abrir un
+# holdout, y eso se hace una vez y con nombre y apellidos.
+
+[stock_us]
+desde = "2026-01-01"
+hasta = "2027-01-01"
+declarado = "2026-09-16"
+motivo = """
+El año en curso. Se reserva para confirmar una hipótesis que ya haya pasado
+validación, y se abre UNA vez por hipótesis.
+
+Que la ventana avance al cambiar de año NO es abrir el holdout: el año nuevo
+aún no ha ocurrido y nadie ha podido mirarlo. Lo que no se hace jamás es
+estrecharla hacia atrás después de ver un resultado.
+"""
+# Nadie lo ha tocado: este repositorio empieza con la barrera ya puesta.
+tocado_por = []
