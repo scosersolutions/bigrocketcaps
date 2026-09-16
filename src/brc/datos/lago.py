@@ -41,6 +41,19 @@ import duckdb
 #: redistribuirlos.
 REPO = os.environ.get("BRC_LAGO", "scoser/moonrocket-lago")
 
+#: Las tablas propias de bigrocketcaps van a OTRO dataset, tambien privado.
+#: No es orden: un MANIFIESTO describe UNA exportacion de UNA base, con su
+#: origen y su huella, y meterlas en el lago de MoonRocket obligaria a
+#: elegir entre machacar ese manifiesto -y dejar 2,4 GB sin poder
+#: restaurar- o subir ficheros que el manifiesto no declara, que es justo
+#: el tipo de incoherencia silenciosa que `exportar_lago` se esfuerza en
+#: impedir. Ademas salen de EDGAR, que es dominio publico, asi que algun
+#: dia pueden abrirse sin arrastrar los precios de Yahoo con ellas.
+REPO_PROPIO = os.environ.get("BRC_LAGO_PROPIO", "scoser/bigrocketcaps-lago")
+
+#: Que tablas viven en `REPO_PROPIO`. Las demas, en `REPO`.
+TABLAS_PROPIAS = frozenset({"eventos_societarios", "sector_empresa"})
+
 #: Dónde se deja lo materializado. Fuera del repositorio y fuera de OneDrive:
 #: son gigabytes que cambian y sincronizarlos no aporta nada.
 CACHE = Path(os.environ.get("BRC_CACHE", Path.home() / ".cache" / "brc-lago"))
@@ -75,9 +88,14 @@ def conectar(bd: str | Path = ":memory:") -> duckdb.DuckDBPyConnection:
     return con
 
 
+def repo_de(tabla: str) -> str:
+    """En que dataset vive esa tabla."""
+    return REPO_PROPIO if tabla in TABLAS_PROPIAS else REPO
+
+
 def ruta(tabla: str, anyo: int | str) -> str:
     """La URL de un trozo del lago, tal como la entiende DuckDB."""
-    return f"hf://datasets/{REPO}/{tabla}/{anyo}.parquet"
+    return f"hf://datasets/{repo_de(tabla)}/{tabla}/{anyo}.parquet"
 
 
 def leer(con: duckdb.DuckDBPyConnection, tabla: str,
@@ -99,7 +117,10 @@ def leer(con: duckdb.DuckDBPyConnection, tabla: str,
         local = CACHE / tabla
         if local.exists() and any(local.glob("*.parquet")):
             return f"read_parquet('{(local / '*.parquet').as_posix()}')"
-        return f"read_parquet('hf://datasets/{REPO}/{tabla}/*.parquet')"
+        # Por `ruta` y no a mano: el comodin tiene que ir al MISMO dataset
+        # que un año suelto, o pedir la tabla entera y pedir un año darian
+        # sitios distintos.
+        return f"read_parquet('{ruta(tabla, '*')}')"
     return f"read_parquet([{', '.join(trozos)}])"
 
 
