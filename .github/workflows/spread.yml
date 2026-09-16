@@ -6,15 +6,28 @@
 # 13:30 y las 20:00 UTC. Depender de que el portatil este encendido a esa hora
 # es depender de una casualidad; el job corre igual.
 #
-# ## Por que no todos los dias
+# ## Por que a diario y no una sola vez
 #
-# Una vez basta para calibrar un modelo de costes, y repetirlo a diario gastaria
-# peticiones de Tiingo (500/dia) sin aportar nada. Se lanza a mano cuando haga
-# falta recalibrar, o cuando se sospeche que la liquidez ha cambiado.
+# Una medicion basta para calibrar, pero repetirla cuesta 20 peticiones de las
+# 500 diarias de Tiingo y a cambio da algo que una sola no da: la EVOLUCION.
+# La liquidez cambia, y un modelo de costes calibrado hace un año puede estar
+# cobrando de menos hoy.
+#
+# La serie no necesita codigo: cada ejecucion commitea su medicion, asi que
+# `git log data/experimentos/spread_us.json` ES el historico.
+#
+# A las 14:23 y no a las 14:00: GitHub retrasa o DESCARTA las ejecuciones
+# programadas cuando hay carga, y los minutos redondos son los mas pedidos con
+# diferencia. Medido en MoonRocket: con `5 * * * *` la ejecucion de las 22:05
+# no llego a existir a las 22:44.
 
 name: Horquilla US
 
 on:
+  schedule:
+    # 14:23 UTC, de lunes a viernes: mercado abierto (13:30-20:00) y con margen
+    # por si GitHub retrasa el disparo.
+    - cron: "23 14 * * 1-5"
   workflow_dispatch:
     inputs:
       instantaneas:
@@ -69,5 +82,8 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add data/experimentos/spread_us.json
-          git diff --staged --quiet || git commit -m "chore: horquilla US medida $(date -u +%Y-%m-%d)"
+          # La mediana va en el asunto del commit: asi `git log --oneline` se
+          # lee como la serie temporal del spread, sin abrir un solo fichero.
+          med=$(python -c "import json;d=json.load(open('data/experimentos/spread_us.json'));a=d['activos'];import statistics;print(f\"{statistics.median([v['mediana_bps'] for v in a.values()]):.2f}\" if a else 'sin datos')")
+          git diff --staged --quiet || git commit -m "chore: horquilla US $(date -u +%Y-%m-%d) · mediana $med bps"
           git push
