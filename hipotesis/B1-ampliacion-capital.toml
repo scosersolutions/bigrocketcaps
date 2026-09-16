@@ -1,0 +1,94 @@
+# B1 · Ampliación de capital y presión bajista
+#
+# ESCRITA ANTES DE MEDIR. Ni una cifra de este fichero sale de haber mirado el
+# resultado. Si algo de aquí se cambia después de medir, la hipótesis queda
+# quemada y hay que abrir otra, que consume otro contraste.
+
+id = "B1"
+titulo = "Una ampliación de capital anunciada produce exceso NEGATIVO a corto plazo"
+estado = "DRAFT"
+autor = "fernando"
+escrita = "2026-09-16"
+
+[mecanismo]
+# Por qué DEBERÍA funcionar, escrito antes de saber si funciona.
+texto = """
+Una empresa que registra una emisión nueva (424B4/424B5, S-1) está vendiendo
+acciones que antes no existían. Eso diluye a quien ya era accionista: el mismo
+negocio repartido entre más títulos.
+
+Además, la colocación suele hacerse con descuento sobre el mercado para que
+alguien la compre, y quien la compra tiene incentivo a cubrirse vendiendo el
+papel que ya tiene. Las dos cosas empujan en la misma dirección.
+
+Es de los pocos eventos societarios con dirección inequívoca. Un cambio de CEO
+puede ser buena o mala noticia; una ampliación es dilución, y la dilución no
+tiene dos lecturas.
+"""
+direccion = "corto"
+por_que_no_al_reves = """
+Se podría argumentar lo contrario: quien amplía capital lo hace para crecer, y
+el mercado premiaría el proyecto. Pero entonces el efecto aparecería en el
+anuncio del PROYECTO, no en el registro de la emisión, que es un trámite
+posterior y conocido. Aquí se mide el trámite.
+"""
+
+[universo]
+mercado = "stock_us"
+fuente_eventos = "eventos_societarios, clase = emision_precio"
+formularios = ["424B4", "424B5"]
+# Solo empresas con precio cruzable por ticker y con historia suficiente.
+minimo_velas_previas = 60
+ventana = "validacion"   # la mitad de sectores que NO se explora
+
+[periodos]
+# El holdout de 2026 no se toca. Y 2025 se reserva como comprobación posterior
+# si B1 sobrevive, para no gastar el holdout en la primera prueba del sistema.
+validacion = "2018-01-01 .. 2024-12-31"
+holdout = "2026-01-01 .. 2027-01-01"
+reserva = "2025-01-01 .. 2025-12-31"
+
+[senal]
+# Un evento aceptado tras el cierre se opera al día siguiente. El 61 % de las
+# emisiones se aceptan tras el cierre, así que esto NO es un detalle.
+entrada = "cierre de la primera sesión en que el mercado pudo reaccionar"
+horizonte_sesiones = 5
+# Cinco sesiones: la dilución se conoce el día del registro y el mercado no
+# tarda semanas en digerir un hecho público y cuantificable. Un horizonte largo
+# mediría sobre todo el ruido del mercado, no el evento.
+
+[referencia]
+# El exceso se mide contra la mediana del universo ESE día, no contra un índice.
+# Comparar una small cap contra el S&P mediría estilo, no evento.
+tipo = "mediana del universo con precio ese día"
+
+[costes]
+modelo = "CostesPorAccion"
+nota = "spread NO medido para acciones US; el juicio se hará con permitir_costes_supuestos y quedará anotado"
+
+[criterios_refutacion]
+# Cualquiera de estos mata la hipótesis. Escritos antes de medir.
+1 = "El exceso medio a 5 sesiones NO es negativo."
+2 = "El exceso no supera al azar: percentil < 95 contra carteras aleatorias equivalentes."
+3 = "El efecto desaparece al dejar pasar una sesión entre el evento y la entrada (sería rebote de horquilla, no evento)."
+4 = "El efecto vive solo en un tramo de años: cambia de signo entre 2018-2021 y 2022-2024."
+5 = "El efecto depende de menos de 20 empresas distintas."
+6 = "La mediana del exceso es positiva aunque la media sea negativa (sería cola, no efecto)."
+
+[presupuesto]
+# Contrastes que consume esta hipótesis. UNA celda: una definición, un
+# horizonte, una referencia. Sin rejilla, sin barrido.
+contrastes = 1
+justificacion = """
+Es la primera hipótesis del proyecto y la primera prueba de la tubería entera.
+Se mide UNA celda a propósito: si se probaran varios horizontes y se eligiera
+el mejor, el resultado no significaría nada y además costaría varios contrastes.
+El horizonte de 5 sesiones se fija aquí, antes de ver ningún número.
+"""
+
+[alcance]
+fuera = """
+NO se prueban otros horizontes. NO se prueban otros tipos de emisión. NO se
+divide por tamaño, sector ni nada. Si B1 sobrevive, cualquiera de esas cosas es
+una hipótesis NUEVA con su propio contraste.
+"""

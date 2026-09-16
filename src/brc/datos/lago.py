@@ -67,6 +67,9 @@ def _token() -> str:
 def conectar(bd: str | Path = ":memory:") -> duckdb.DuckDBPyConnection:
     """Conexión de DuckDB capaz de leer el lago remoto."""
     con = duckdb.connect(str(bd))
+    # La barra de progreso escribe miles de lineas de escape cuando la salida
+    # no es una terminal, y se come el informe que venga detras.
+    con.execute("SET enable_progress_bar = false")
     con.execute("INSTALL httpfs; LOAD httpfs;")
     con.execute(f"CREATE OR REPLACE SECRET hf (TYPE huggingface, TOKEN '{_token()}')")
     return con
