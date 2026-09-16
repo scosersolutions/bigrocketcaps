@@ -52,6 +52,11 @@ desktop.ini
 #  - los 544 KB que necesita el despliegue en la nube (la base son 1,1 GB)
 !data/papel/
 !data/publico/
+#  - la horquilla medida: el workflow `Horquilla US` la commitea en cada
+#    ejecucion, y `git log` de ese fichero ES la serie temporal. Sin esta
+#    excepcion `git add` fallaba por fichero ignorado.
+!data/experimentos/
+!data/experimentos/*.json
 data/cuaderno.html
 
 # El sitio generado SI se versiona: es lo que despliega Cloudflare Pages.

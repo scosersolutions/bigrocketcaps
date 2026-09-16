@@ -73,9 +73,14 @@ jobs:
             echo "::error::falta el secreto TIINGO_TOKEN"
             exit 1
           fi
+          # El `default:` de `workflow_dispatch.inputs` NO se aplica cuando
+          # el disparo es `schedule`: ahi `inputs.*` llega VACIO y el script
+          # moria con `invalid int value: ''` (ejecucion 35133028946, del
+          # 2026-09-16). El valor por defecto va aqui tambien, que es el
+          # unico sitio por el que pasan los dos disparos.
           python scripts/medir_spread_us.py \
-            --instantaneas "${{ inputs.instantaneas }}" \
-            --pausa "${{ inputs.pausa }}"
+            --instantaneas "${{ inputs.instantaneas || '60' }}" \
+            --pausa "${{ inputs.pausa || '30' }}"
 
       - name: Guardar la medicion
         run: |
