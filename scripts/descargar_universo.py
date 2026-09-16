@@ -39,6 +39,7 @@ from pathlib import Path
 
 import duckdb
 import httpx
+from dotenv import load_dotenv
 
 from brc.datos.esquema import DDL
 from brc.datos.universo import Trimestre, UniversoError, acciones_en_circulacion
@@ -48,6 +49,10 @@ FUENTE = "sec_frames_dei"
 
 
 def _user_agent() -> str:
+    # El .env no se carga solo: sin esto el script funcionaria en una terminal
+    # con la variable exportada y fallaria en otra, que es el tipo de fallo que
+    # cuesta media hora encontrar.
+    load_dotenv()
     ua = os.environ.get("MR_SEC_USER_AGENT", "")
     if "@" not in ua or "ejemplo.com" in ua or "tu-email" in ua:
         raise UniversoError(

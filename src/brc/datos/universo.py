@@ -133,30 +133,56 @@ def _vacio() -> pl.DataFrame:
 
 
 def deciles(
-    acciones: pl.DataFrame, precios: pl.DataFrame, *, n: int = 10
+    historico: pl.DataFrame, precios: pl.DataFrame, *, n: int = 10
 ) -> pl.DataFrame:
-    """Capitalización y decil por empresa, dentro de cada fecha.
+    """Capitalización y decil por empresa, con el último dato PUBLICADO.
 
-    `precios` es (cik, fecha, close). El decil se calcula **dentro de cada
-    fecha** y no sobre el histórico entero: si no, una empresa parecería grande
-    en 2012 por lo que valía el mercado en 2026.
+    `historico` es (cik, publicado, acciones); `precios` es (cik, fecha, close).
 
-    El decil 10 es el más grande. Las empresas sin precio ese día NO se
-    rellenan hacia atrás: se quedan fuera, que es lo que significa no cotizar.
+    ## Por qué no se usa "el trimestre correspondiente"
+
+    Medido sobre los 60 trimestres descargados: Q1 trae 5.401 empresas de
+    media, Q2 5.206, Q3 4.921 y **Q4 solo 2.911**, un 44 % menos. No es un
+    hueco de la descarga: `EntityCommonStockSharesOutstanding` se declara en la
+    portada del 10-Q y del 10-K, y las empresas con año fiscal en diciembre
+    presentan el 10-K en el Q1 siguiente, no en el Q4.
+
+    Construir el universo por trimestre daría, cada cuarto trimestre, un
+    universo formado casi solo por empresas de calendario fiscal atípico. Eso
+    es un sesgo de selección que no se ve en ninguna métrica agregada y que
+    contamina cualquier estudio transversal que caiga en esas fechas.
+
+    Así que a cada fecha se usa el último dato **publicado antes de ella**,
+    venga del trimestre que venga. Es lo correcto point-in-time y de paso
+    elimina el hueco: una empresa que declaró en Q3 sigue en el universo de
+    diciembre con esa cifra, que es exactamente lo que se sabía entonces.
+
+    El decil se calcula **dentro de cada fecha**, nunca sobre el histórico
+    entero: si no, una empresa parecería grande en 2012 por lo que valía el
+    mercado en 2026. El decil 10 es el más grande. Las empresas sin precio ese
+    día se quedan fuera, que es lo que significa no cotizar.
     """
-    if acciones.is_empty() or precios.is_empty():
-        return pl.DataFrame(schema={"cik": pl.Int64, "fecha": pl.Date,
-                                    "capitalizacion": pl.Float64,
-                                    "decil": pl.Int32})
-    j = precios.join(acciones.select("cik", "acciones"), on="cik", how="inner")
+    vacio = pl.DataFrame(schema={"cik": pl.Int64, "fecha": pl.Date,
+                                 "capitalizacion": pl.Float64,
+                                 "decil": pl.Int32})
+    if historico.is_empty() or precios.is_empty():
+        return vacio
+
+    # join_asof exige las dos partes ordenadas por la clave temporal.
+    izq = precios.sort("fecha")
+    der = historico.select("cik", "publicado", "acciones").sort("publicado")
+    j = izq.join_asof(
+        der, left_on="fecha", right_on="publicado", by="cik",
+        strategy="backward",      # el ultimo publicado ANTES de la fecha
+    ).filter(pl.col("acciones").is_not_null())
+    if j.is_empty():
+        return vacio
+
     return (
         j.with_columns((pl.col("close") * pl.col("acciones")).alias("capitalizacion"))
         .filter(pl.col("capitalizacion") > 0)
         .with_columns(
-            pl.col("capitalizacion")
-            .rank("ordinal")
-            .over("fecha")
-            .alias("_puesto"),
+            pl.col("capitalizacion").rank("ordinal").over("fecha").alias("_puesto"),
             pl.len().over("fecha").alias("_vivas"),
         )
         .with_columns(
