@@ -69,7 +69,10 @@ jobs:
         env:
           TIINGO_TOKEN: ${{ secrets.TIINGO_TOKEN }}
           CONTROL_CENTER_URL: ${{ secrets.CONTROL_CENTER_URL }}
-          CONTROL_CENTER_TOKEN: ${{ secrets.CONTROL_CENTER_TOKEN }}
+          # Un token por automatizacion: el SDK comprueba que el token
+          # corresponde al slug y se niega si no. Por eso el secreto lleva
+          # sufijo y se mapea aqui al nombre que lee el SDK.
+          CONTROL_CENTER_TOKEN: ${{ secrets.CONTROL_CENTER_TOKEN_HORQUILLA }}
         run: |
           if [ -z "$TIINGO_TOKEN" ]; then
             echo "::error::falta el secreto TIINGO_TOKEN"
