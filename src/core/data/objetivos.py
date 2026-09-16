@@ -40,7 +40,7 @@ import time
 import httpx
 import polars as pl
 
-from core.data.binance_dumps import DescargaError
+from core.data.errores import DescargaError
 from core.obs.logging import get_logger
 
 log = get_logger(__name__)

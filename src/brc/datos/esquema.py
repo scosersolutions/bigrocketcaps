@@ -76,6 +76,33 @@ CREATE TABLE IF NOT EXISTS universo_decil (
     PRIMARY KEY (cik, fecha, version)
 );
 
+-- Eventos societarios fuertes, ya clasificados. Se llama distinto que la
+-- tabla `eventos` del nucleo a proposito: aquella es del universo de
+-- MoonRocket (548 empresas) y esta del de aqui (14.256). Que compartieran
+-- nombre invitaria a mezclarlas, y tienen coberturas muy distintas.
+--
+-- `aceptado` lleva hora y `tras_cierre` sale de ella: el 58 % de los eventos
+-- se aceptan despues del cierre, y tratarlos como operables ese dia regala
+-- media sesion que nadie tuvo.
+CREATE TABLE IF NOT EXISTS eventos_societarios (
+    cik         BIGINT  NOT NULL,
+    ticker      VARCHAR,
+    accession   VARCHAR NOT NULL,
+    formulario  VARCHAR NOT NULL,
+    clase       VARCHAR NOT NULL,
+    items       VARCHAR,
+    aceptado    TIMESTAMPTZ,
+    presentado  DATE    NOT NULL,
+    periodo     DATE,
+    tras_cierre BOOLEAN NOT NULL,
+    ingerido    TIMESTAMPTZ NOT NULL,
+    source      VARCHAR NOT NULL,
+    -- El cik va en la clave: un mismo accession aparece bajo varias entidades
+    -- --una SC 13D la ve el inversor y la empresa-- y sin el cik la segunda
+    -- pisaba a la primera. Medido: 1.091 filas perdidas en 3.000 empresas.
+    PRIMARY KEY (cik, accession, clase)
+);
+
 -- Ticker <-> CIK, que no es una correspondencia estable: los tickers se
 -- reciclan. Se guarda con la fecha en que se comprobó para poder detectar el
 -- día en que un ticker cambió de dueño.

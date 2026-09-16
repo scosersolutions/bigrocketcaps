@@ -33,7 +33,7 @@ from datetime import date
 import httpx
 import polars as pl
 
-from core.data.binance_dumps import DescargaError
+from core.data.errores import DescargaError
 from core.data.edgar import cabeceras
 from core.obs.logging import get_logger
 
