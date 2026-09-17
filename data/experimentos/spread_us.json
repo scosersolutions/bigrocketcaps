@@ -1,10 +1,161 @@
 {
-  "medido": "2026-09-17T17:26:14.558474+00:00",
+  "medido": "2026-09-17T17:40:56.619933+00:00",
   "fuente": "corwin-schultz sobre high/low/close diario del lago",
   "aviso": "es un ESTIMADOR, no una medicion, y SOBRESTIMA el nivel en los valores liquidos: da ~50 bps para AAPL, cuya horquilla real es ~1 bp. El ORDEN entre valores si es fiable. Uselo como COTA SUPERIOR -lo que sobrevive a este coste sobrevive de verdad-, no como el coste real.",
   "limitacion": "da una horquilla por sesion, no por orden: no recoge que la horquilla se abre en la apertura ni que una orden grande se come varios niveles del libro",
   "periodo": "2018-2024",
   "sesiones": 35257,
+  "titular": "Horquilla estimada de 21 valores US entre 2018 y 2024. Es una COTA SUPERIOR: sirve para absolver una hipotesis, no para condenarla",
+  "que_son_estos_valores": "los mismos que muestreaba el medidor: una escalera de liquidez de AAPL a CLOV, elegida para cubrir la banda entera y no una punta",
+  "valores": [
+    {
+      "valor": "JPM",
+      "horquilla_tipica_bps": 44.49,
+      "mal_mes_bps": 75.82,
+      "peor_mes_bps": 250.92,
+      "meses": 84
+    },
+    {
+      "valor": "XOM",
+      "horquilla_tipica_bps": 47.68,
+      "mal_mes_bps": 76.58,
+      "peor_mes_bps": 197.1,
+      "meses": 84
+    },
+    {
+      "valor": "MSFT",
+      "horquilla_tipica_bps": 47.88,
+      "mal_mes_bps": 82.72,
+      "peor_mes_bps": 269.45,
+      "meses": 84
+    },
+    {
+      "valor": "KHC",
+      "horquilla_tipica_bps": 48.34,
+      "mal_mes_bps": 69.2,
+      "peor_mes_bps": 355.03,
+      "meses": 84
+    },
+    {
+      "valor": "PFE",
+      "horquilla_tipica_bps": 49.11,
+      "mal_mes_bps": 74.75,
+      "peor_mes_bps": 230.92,
+      "meses": 84
+    },
+    {
+      "valor": "AAPL",
+      "horquilla_tipica_bps": 49.14,
+      "mal_mes_bps": 75.5,
+      "peor_mes_bps": 208.78,
+      "meses": 84
+    },
+    {
+      "valor": "AMZN",
+      "horquilla_tipica_bps": 54.08,
+      "mal_mes_bps": 91.0,
+      "peor_mes_bps": 182.65,
+      "meses": 84
+    },
+    {
+      "valor": "GOOGL",
+      "horquilla_tipica_bps": 55.26,
+      "mal_mes_bps": 78.4,
+      "peor_mes_bps": 245.45,
+      "meses": 84
+    },
+    {
+      "valor": "META",
+      "horquilla_tipica_bps": 62.87,
+      "mal_mes_bps": 111.59,
+      "peor_mes_bps": 215.6,
+      "meses": 84
+    },
+    {
+      "valor": "F",
+      "horquilla_tipica_bps": 63.22,
+      "mal_mes_bps": 104.69,
+      "peor_mes_bps": 217.16,
+      "meses": 84
+    },
+    {
+      "valor": "SIRI",
+      "horquilla_tipica_bps": 67.28,
+      "mal_mes_bps": 106.12,
+      "peor_mes_bps": 269.44,
+      "meses": 84
+    },
+    {
+      "valor": "HAL",
+      "horquilla_tipica_bps": 76.41,
+      "mal_mes_bps": 128.82,
+      "peor_mes_bps": 411.97,
+      "meses": 84
+    },
+    {
+      "valor": "AAL",
+      "horquilla_tipica_bps": 80.18,
+      "mal_mes_bps": 151.95,
+      "peor_mes_bps": 359.35,
+      "meses": 84
+    },
+    {
+      "valor": "NVDA",
+      "horquilla_tipica_bps": 81.84,
+      "mal_mes_bps": 143.8,
+      "peor_mes_bps": 306.18,
+      "meses": 84
+    },
+    {
+      "valor": "NCLH",
+      "horquilla_tipica_bps": 92.72,
+      "mal_mes_bps": 186.96,
+      "peor_mes_bps": 559.81,
+      "meses": 84
+    },
+    {
+      "valor": "RIG",
+      "horquilla_tipica_bps": 127.87,
+      "mal_mes_bps": 222.2,
+      "peor_mes_bps": 409.22,
+      "meses": 84
+    },
+    {
+      "valor": "PLUG",
+      "horquilla_tipica_bps": 156.44,
+      "mal_mes_bps": 234.43,
+      "peor_mes_bps": 336.58,
+      "meses": 84
+    },
+    {
+      "valor": "CLOV",
+      "horquilla_tipica_bps": 159.04,
+      "mal_mes_bps": 247.39,
+      "peor_mes_bps": 442.84,
+      "meses": 55
+    },
+    {
+      "valor": "GEVO",
+      "horquilla_tipica_bps": 198.44,
+      "mal_mes_bps": 331.39,
+      "peor_mes_bps": 588.75,
+      "meses": 84
+    },
+    {
+      "valor": "FCEL",
+      "horquilla_tipica_bps": 202.82,
+      "mal_mes_bps": 341.52,
+      "peor_mes_bps": 450.22,
+      "meses": 84
+    },
+    {
+      "valor": "SOUN",
+      "horquilla_tipica_bps": 228.77,
+      "mal_mes_bps": 396.48,
+      "peor_mes_bps": 615.26,
+      "meses": 33
+    }
+  ],
   "mediana_de_p90s": 111.59,
   "maximo_de_p90s": 396.48,
   "activos": {
