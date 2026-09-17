@@ -1,5 +1,5 @@
 {
-  "medido": "2026-09-17T17:24:33.183973+00:00",
+  "medido": "2026-09-17T17:26:14.558474+00:00",
   "fuente": "corwin-schultz sobre high/low/close diario del lago",
   "aviso": "es un ESTIMADOR, no una medicion, y SOBRESTIMA el nivel en los valores liquidos: da ~50 bps para AAPL, cuya horquilla real es ~1 bp. El ORDEN entre valores si es fiable. Uselo como COTA SUPERIOR -lo que sobrevive a este coste sobrevive de verdad-, no como el coste real.",
   "limitacion": "da una horquilla por sesion, no por orden: no recoge que la horquilla se abre en la apertura ni que una orden grande se come varios niveles del libro",
