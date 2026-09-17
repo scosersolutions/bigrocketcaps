@@ -45,8 +45,11 @@ def calibrar(datos: dict) -> dict:
     mediana_de_p90s = datos.get("mediana_de_p90s",
                                round(statistics.median(p90s), 3))
     maximo_de_p90s = datos.get("maximo_de_p90s", round(max(p90s), 3))
-    origen = (f"tiingo/iex p90 por activo, mediana de {len(p90s)} activos, "
-             f"medido {datos.get('medido', '?')}")
+    # La fuente sale del fichero, no de aqui: desde que la horquilla se
+    # estima en vez de medirse, poner "tiingo/iex" a mano seria firmar un
+    # origen falso en el modelo de costes.
+    origen = (f"{datos.get('fuente', 'origen sin declarar')} · p90 por activo, "
+             f"mediana de {len(p90s)} activos, del {datos.get('medido', '?')}")
 
     return {
         "modelo_principal": CostesPorAccion(

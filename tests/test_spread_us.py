@@ -53,7 +53,13 @@ class TestCalibrarLeeLoEscrito:
         assert r["mediana_de_p90s"] == 2.0
         assert r["maximo_de_p90s"] == 3.0
 
-    def test_el_modelo_calibrado_se_declara_medido(self):
-        r = C.calibrar({"activos": _activos(A=5.0)})
+    def test_el_origen_sale_del_fichero_y_no_esta_escrito_a_mano(self):
+        """Poner la fuente a mano firmaria un origen falso en el modelo de
+        costes el dia que la horquilla cambie de procedencia. Y ha cambiado."""
+        r = C.calibrar({"activos": _activos(A=5.0), "fuente": "corwin-schultz"})
         assert r["modelo_principal"].spread_medido is True
-        assert "tiingo/iex" in r["modelo_principal"].origen_spread
+        assert "corwin-schultz" in r["modelo_principal"].origen_spread
+
+    def test_una_medicion_sin_fuente_lo_dice_en_vez_de_callarselo(self):
+        r = C.calibrar({"activos": _activos(A=5.0)})
+        assert "sin declarar" in r["modelo_principal"].origen_spread

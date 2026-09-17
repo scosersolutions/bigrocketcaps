@@ -1,49 +1,48 @@
-# Mide la horquilla real de acciones US, con el mercado abierto.
+# Estima la horquilla de acciones US desde el OHLC diario del lago.
 #
-# ## Por que en Actions y no en el portatil
+# ## Por que ya no mide
 #
-# Hay que muestrear durante media hora con el mercado abierto, o sea entre las
-# 13:30 y las 20:00 UTC. Depender de que el portatil este encendido a esa hora
-# es depender de una casualidad; el job corre igual.
+# Medirla era el plan, y GitHub Actions era el sitio porque habia que muestrear
+# el libro con el mercado abierto. Desde el 1-feb-2025 IEX exige un Data
+# Subscriber Agreement firmado para el TOPS en tiempo real: sin el, Tiingo
+# devuelve `bidPrice` y `askPrice` a NULL, y la tarifa de IEX lo pone en
+# 500 $/mes. Con el suelo de coste en cero, esa puerta esta cerrada. El detalle
+# entero, con numeros, en `brc.estudio.horquilla`.
 #
-# ## Por que a diario y no una sola vez
+# ## Por que ya no hay cron
 #
-# Una medicion basta para calibrar, pero repetirla cuesta 20 peticiones de las
-# 500 diarias de Tiingo y a cambio da algo que una sola no da: la EVOLUCION.
-# La liquidez cambia, y un modelo de costes calibrado hace un año puede estar
-# cobrando de menos hoy.
+# Lo que medimos ya no es el presente: es una estimacion sobre el historico del
+# lago. Solo cambia cuando el lago gana sesiones nuevas, que no pasa a diario y
+# desde luego no a una hora concreta. Un cron aqui seria ruido en el historial y
+# minutos de runner quemados para reescribir el mismo fichero.
 #
-# La serie no necesita codigo: cada ejecucion commitea su medicion, asi que
-# `git log data/experimentos/spread_us.json` ES el historico.
-#
-# A las 14:23 y no a las 14:00: GitHub retrasa o DESCARTA las ejecuciones
-# programadas cuando hay carga, y los minutos redondos son los mas pedidos con
-# diferencia. Medido en MoonRocket: con `5 * * * *` la ejecucion de las 22:05
-# no llego a existir a las 22:44.
+# Se lanza a mano -o desde el Centro de Control, que es `github_actions` sobre
+# este mismo fichero- cuando el lago se haya actualizado.
 
 name: Horquilla US
 
 on:
-  schedule:
-    # 14:23 UTC, de lunes a viernes: mercado abierto (13:30-20:00) y con margen
-    # por si GitHub retrasa el disparo.
-    - cron: "23 14 * * 1-5"
   workflow_dispatch:
     inputs:
-      instantaneas:
-        description: "Cuantas instantaneas tomar"
-        default: "60"
-      pausa:
-        description: "Segundos entre instantaneas"
-        default: "30"
+      estimador:
+        description: "cs = Corwin-Schultz, ar = Abdi-Ranaldo"
+        type: choice
+        options:
+          - cs
+          - ar
+        default: cs
 
 permissions:
   contents: write
 
+concurrency:
+  group: horquilla
+  cancel-in-progress: false
+
 jobs:
-  medir:
+  estimar:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
 
@@ -54,51 +53,35 @@ jobs:
 
       - run: pip install -e .
 
-      - name: Comprobar que el mercado esta abierto
-        # 13:30-20:00 UTC. Fuera de esa franja no hay libro que medir y el job
-        # se para aqui en vez de gastar media hora para nada.
-        run: |
-          h=$(date -u +%H%M)
-          if [ "$h" -lt 1330 ] || [ "$h" -gt 1930 ]; then
-            echo "::error::son las $h UTC; el mercado US cotiza de 13:30 a 20:00"
-            exit 1
-          fi
-          echo "hora UTC $h: dentro de sesion"
-
-      - name: Muestrear la horquilla
+      - name: Estimar la horquilla
         env:
-          TIINGO_TOKEN: ${{ secrets.TIINGO_TOKEN }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
           CONTROL_CENTER_URL: ${{ secrets.CONTROL_CENTER_URL }}
           # Un token por automatizacion: el SDK comprueba que el token
-          # corresponde al slug y se niega si no. Por eso el secreto lleva
-          # sufijo y se mapea aqui al nombre que lee el SDK.
+          # corresponde al slug y se niega si no.
           CONTROL_CENTER_TOKEN: ${{ secrets.CONTROL_CENTER_TOKEN_HORQUILLA }}
         run: |
-          if [ -z "$TIINGO_TOKEN" ]; then
-            echo "::error::falta el secreto TIINGO_TOKEN"
+          set -euo pipefail
+          if [ -z "$HF_TOKEN" ]; then
+            echo "::error::falta el secreto HF_TOKEN; el lago es privado"
             exit 1
           fi
-          # El `default:` de `workflow_dispatch.inputs` NO se aplica cuando
-          # el disparo es `schedule`: ahi `inputs.*` llega VACIO y el script
-          # moria con `invalid int value: ''` (ejecucion 35133028946, del
-          # 2026-09-16). El valor por defecto va aqui tambien, que es el
-          # unico sitio por el que pasan los dos disparos.
-          # El anillo de `con_control` no puede impedir medir: sin las dos
+          # El anillo de `con_control` no puede impedir estimar: sin las dos
           # variables de arriba ejecuta el comando y no reporta nada.
           python scripts/con_control.py --slug brc-horquilla \
             --resultado horquilla=data/experimentos/spread_us.json \
             --resumen "horquilla {horquilla.mediana_de_p90s} bps, peor activo {horquilla.maximo_de_p90s} bps" \
-            -- python scripts/medir_spread_us.py \
-            --instantaneas "${{ inputs.instantaneas || '60' }}" \
-            --pausa "${{ inputs.pausa || '30' }}"
+            -- python scripts/estimar_horquilla.py --estimador "${{ inputs.estimador || 'cs' }}"
 
-      - name: Guardar la medicion
+      - name: Guardar la estimacion
         run: |
+          set -euo pipefail
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add data/experimentos/spread_us.json
-          # La mediana va en el asunto del commit: asi `git log --oneline` se
-          # lee como la serie temporal del spread, sin abrir un solo fichero.
-          med=$(python -c "import json;d=json.load(open('data/experimentos/spread_us.json'));a=d['activos'];import statistics;print(f\"{statistics.median([v['mediana_bps'] for v in a.values()]):.2f}\" if a else 'sin datos')")
+          # La mediana va en el asunto: asi `git log --oneline` se lee como la
+          # serie de la horquilla, sin abrir un solo fichero.
+          med=$(python -c "import json;d=json.load(open('data/experimentos/spread_us.json'));print(f\"{d['mediana_de_p90s']:.2f}\")")
           git diff --staged --quiet || git commit -m "chore: horquilla US $(date -u +%Y-%m-%d) · mediana $med bps"
+          git pull --rebase
           git push

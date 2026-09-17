@@ -1,5 +1,12 @@
 """Mide la horquilla REAL de acciones estadounidenses, muestreando el presente.
 
+!! NO FUNCIONA desde el 1-feb-2025, y no es un fallo que arreglar aqui:
+IEX exige un Data Subscriber Agreement firmado para el TOPS en tiempo real,
+asi que Tiingo devuelve `bidPrice` y `askPrice` a NULL y no hay horquilla que
+medir. La tarifa de IEX lo pone en 500 $/mes. Se conserva el guion porque el
+dia que exista esa entitlement vuelve a funcionar tal cual. Mientras tanto,
+la horquilla se ESTIMA: `scripts/estimar_horquilla.py`.
+
 ## Por qué muestrear y no estimar
 
 No hay bid/ask histórico gratuito para acciones US. Las dos salidas son

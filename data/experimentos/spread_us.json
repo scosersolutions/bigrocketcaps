@@ -1,0 +1,138 @@
+{
+  "medido": "2026-09-17T17:24:33.183973+00:00",
+  "fuente": "corwin-schultz sobre high/low/close diario del lago",
+  "aviso": "es un ESTIMADOR, no una medicion, y SOBRESTIMA el nivel en los valores liquidos: da ~50 bps para AAPL, cuya horquilla real es ~1 bp. El ORDEN entre valores si es fiable. Uselo como COTA SUPERIOR -lo que sobrevive a este coste sobrevive de verdad-, no como el coste real.",
+  "limitacion": "da una horquilla por sesion, no por orden: no recoge que la horquilla se abre en la apertura ni que una orden grande se come varios niveles del libro",
+  "periodo": "2018-2024",
+  "sesiones": 35257,
+  "mediana_de_p90s": 111.59,
+  "maximo_de_p90s": 396.48,
+  "activos": {
+    "AAL": {
+      "n": 84,
+      "mediana_bps": 80.18,
+      "p90_bps": 151.95,
+      "max_bps": 359.35
+    },
+    "AAPL": {
+      "n": 84,
+      "mediana_bps": 49.14,
+      "p90_bps": 75.5,
+      "max_bps": 208.78
+    },
+    "AMZN": {
+      "n": 84,
+      "mediana_bps": 54.08,
+      "p90_bps": 91.0,
+      "max_bps": 182.65
+    },
+    "CLOV": {
+      "n": 55,
+      "mediana_bps": 159.04,
+      "p90_bps": 247.39,
+      "max_bps": 442.84
+    },
+    "F": {
+      "n": 84,
+      "mediana_bps": 63.22,
+      "p90_bps": 104.69,
+      "max_bps": 217.16
+    },
+    "FCEL": {
+      "n": 84,
+      "mediana_bps": 202.82,
+      "p90_bps": 341.52,
+      "max_bps": 450.22
+    },
+    "GEVO": {
+      "n": 84,
+      "mediana_bps": 198.44,
+      "p90_bps": 331.39,
+      "max_bps": 588.75
+    },
+    "GOOGL": {
+      "n": 84,
+      "mediana_bps": 55.26,
+      "p90_bps": 78.4,
+      "max_bps": 245.45
+    },
+    "HAL": {
+      "n": 84,
+      "mediana_bps": 76.41,
+      "p90_bps": 128.82,
+      "max_bps": 411.97
+    },
+    "JPM": {
+      "n": 84,
+      "mediana_bps": 44.49,
+      "p90_bps": 75.82,
+      "max_bps": 250.92
+    },
+    "KHC": {
+      "n": 84,
+      "mediana_bps": 48.34,
+      "p90_bps": 69.2,
+      "max_bps": 355.03
+    },
+    "META": {
+      "n": 84,
+      "mediana_bps": 62.87,
+      "p90_bps": 111.59,
+      "max_bps": 215.6
+    },
+    "MSFT": {
+      "n": 84,
+      "mediana_bps": 47.88,
+      "p90_bps": 82.72,
+      "max_bps": 269.45
+    },
+    "NCLH": {
+      "n": 84,
+      "mediana_bps": 92.72,
+      "p90_bps": 186.96,
+      "max_bps": 559.81
+    },
+    "NVDA": {
+      "n": 84,
+      "mediana_bps": 81.84,
+      "p90_bps": 143.8,
+      "max_bps": 306.18
+    },
+    "PFE": {
+      "n": 84,
+      "mediana_bps": 49.11,
+      "p90_bps": 74.75,
+      "max_bps": 230.92
+    },
+    "PLUG": {
+      "n": 84,
+      "mediana_bps": 156.44,
+      "p90_bps": 234.43,
+      "max_bps": 336.58
+    },
+    "RIG": {
+      "n": 84,
+      "mediana_bps": 127.87,
+      "p90_bps": 222.2,
+      "max_bps": 409.22
+    },
+    "SIRI": {
+      "n": 84,
+      "mediana_bps": 67.28,
+      "p90_bps": 106.12,
+      "max_bps": 269.44
+    },
+    "SOUN": {
+      "n": 33,
+      "mediana_bps": 228.77,
+      "p90_bps": 396.48,
+      "max_bps": 615.26
+    },
+    "XOM": {
+      "n": 84,
+      "mediana_bps": 47.68,
+      "p90_bps": 76.58,
+      "max_bps": 197.1
+    }
+  }
+}
