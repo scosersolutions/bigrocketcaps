@@ -45,6 +45,22 @@ def cargar(con: duckdb.DuckDBPyConnection, anyos: list[int],
     ).pl()
 
 
+def tabla_de_valores(resumen: dict[str, dict]) -> list[dict]:
+    """Un valor por fila, del mas barato de operar al mas caro.
+
+    `activos` es un diccionario de ticker a objeto, y eso el Centro de Control
+    no lo pinta como tabla -solo pinta listas-, asi que la cifra agregada
+    aparecia sola, sin decir sobre QUE valores se ha calculado. Esta lista es
+    la respuesta a esa pregunta.
+    """
+    return [{"valor": t,
+             "horquilla_tipica_bps": v["mediana_bps"],
+             "mal_mes_bps": v["p90_bps"],
+             "peor_mes_bps": v["max_bps"],
+             "meses": v["n"]}
+            for t, v in sorted(resumen.items(), key=lambda kv: kv[1]["mediana_bps"])]
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--anyo-desde", type=int, default=2018)
@@ -99,6 +115,13 @@ def main() -> int:
                        "orden grande se come varios niveles del libro"),
         "periodo": f"{a.anyo_desde}-{a.anyo_hasta}",
         "sesiones": estimaciones.height,
+        "titular": (f"Horquilla estimada de {len(resumen)} valores US entre "
+                   f"{a.anyo_desde} y {a.anyo_hasta}. Es una COTA SUPERIOR: "
+                   f"sirve para absolver una hipotesis, no para condenarla"),
+        "que_son_estos_valores": ("los mismos que muestreaba el medidor: una "
+                                 "escalera de liquidez de AAPL a CLOV, elegida "
+                                 "para cubrir la banda entera y no una punta"),
+        "valores": tabla_de_valores(resumen),
         "mediana_de_p90s": mediana_de_p90s,
         "maximo_de_p90s": round(max(p90s), 3),
         "activos": resumen,

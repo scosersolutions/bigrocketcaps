@@ -216,6 +216,45 @@ def evaluar_criterios_b1(
     }
 
 
+def tabla_de_tramos(por_tramo: dict[str, float], direccion: str) -> list[dict]:
+    """`{"2018-2021": 0.464}` -> una fila legible por tramo.
+
+    Un diccionario de periodo a numero es un volcado, no una lectura: hay que
+    saberse de memoria que el numero es un exceso en por ciento y que para una
+    hipotesis "corto" el negativo es el que le da la razon. La fila lo dice.
+    """
+    a_favor = "negativo" if direccion == "corto" else "positivo"
+    filas = []
+    for periodo, exceso in por_tramo.items():
+        acierta = exceso < 0 if direccion == "corto" else exceso > 0
+        filas.append({
+            "periodo": periodo,
+            "exceso_medio": f"{exceso:+.3f} %",
+            "lectura": (f"a favor (la hipotesis predice {a_favor})" if acierta
+                        else f"en contra (la hipotesis predice {a_favor})"),
+        })
+    return filas
+
+
+def tabla_de_criterios(criterios: dict[str, dict]) -> list[dict]:
+    """Un criterio por fila, con el veredicto delante y sin barra baja."""
+    return [{
+        "criterio": nombre.split("_", 1)[1].replace("_", " ").capitalize(),
+        "resultado": "PASA" if c["supera"] else "REFUTA",
+        "valor": c["valor"],
+        "se_refuta_si": c["refuta_si"],
+    } for nombre, c in criterios.items()]
+
+
+def titular(r, refutada: bool, percentil: float) -> str:
+    """Una frase que se entienda sin abrir nada mas."""
+    estado = "REFUTADA" if refutada else "SOBREVIVE (sin criterio de coste)"
+    return (f"B1 {estado} · exceso medio {r.exceso_medio_pct:+.3f} % a 5 sesiones "
+            f"sobre {r.n:,} anuncios de ampliacion de capital en {r.n_empresas} "
+            f"empresas · el azar lo iguala o lo mejora en el {100 - percentil:.0f} % "
+            f"de los sorteos")
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--base", default="data/bigrocketcaps.duckdb")
@@ -276,6 +315,17 @@ lago. Se suben una vez con:
         "exceso_mediano_pct": resultado["resultado"].exceso_mediano_pct,
         "t": resultado["resultado"].t, "por_tramo": resultado["resultado"].por_tramo,
         "percentil_azar": resultado["percentil_azar"],
+        # Lo de abajo existe para que se pueda LEER: el Centro de Control
+        # pinta tablas con listas de objetos y volcados crudos con los
+        # diccionarios, y un `{"2018-2021": 0.464}` en pantalla no dice ni que
+        # es un por ciento ni de que lado cae.
+        "titular": titular(resultado["resultado"], resultado["refutada"],
+                          resultado["percentil_azar"]),
+        "veredicto": "REFUTADA" if resultado["refutada"] else "SOBREVIVE",
+        "hipotesis_dice": ("una ampliacion de capital produce exceso NEGATIVO "
+                          "a 5 sesiones"),
+        "tramos": tabla_de_tramos(resultado["resultado"].por_tramo, DIRECCION),
+        "criterios_tabla": tabla_de_criterios(resultado["criterios"]),
         "criterios": {k: {"supera": v["supera"], "valor": v["valor"]}
                      for k, v in resultado["criterios"].items()},
         "refutada_sin_coste": resultado["refutada"],
