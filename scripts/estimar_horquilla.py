@@ -46,6 +46,44 @@ def cargar(con: duckdb.DuckDBPyConnection, anyos: list[int],
     ).pl()
 
 
+def lectura_por_valor(resumen: dict[str, dict]) -> list[dict]:
+    """Ticker a ticker: cuanto cuesta operarlo y que hace falta para ganar.
+
+    ## Lo que esta tabla dice, y lo que NO
+
+    NO dice que valores merece la pena comprar. No lo dice porque este
+    laboratorio no lo sabe: B1 esta refutada y no hay ninguna hipotesis viva,
+    asi que no hay ni una accion sobre la que tenga nada que opinar. Una tabla
+    que dijera "compra esta" seria inventarsela.
+
+    SI dice lo que cuesta ENTRAR Y SALIR de cada una, que es un hecho y no una
+    opinion, y de ahi sale el umbral: una idea que gane menos que eso pierde
+    dinero por mucho que acierte la direccion. Ida y vuelta se paga
+    aproximadamente una horquilla entera -media al entrar y media al salir-,
+    asi que el umbral en por ciento es la horquilla en bps entre cien.
+
+    Sirve para descartar, que es lo unico que este sistema sabe hacer: si una
+    idea futura promete un 0,3 % por operacion, esta tabla dice en que valores
+    ni merece la pena probarla.
+    """
+    filas = []
+    for t, v in sorted(resumen.items(), key=lambda kv: kv[1]["mediana_bps"]):
+        umbral = v["mediana_bps"] / 100
+        if umbral < 0.5:
+            lectura = "de los baratos de operar, dentro de esta muestra"
+        elif umbral < 1.5:
+            lectura = "caro: solo para ideas que ganen bastante por operacion"
+        else:
+            lectura = "carisimo: casi nada compensa entrar y salir aqui"
+        filas.append({
+            "valor": t,
+            "cuesta_entrar_y_salir_pct": round(umbral, 2),
+            "hay_que_ganar_mas_de": f"{umbral:.2f} % por operacion",
+            "lectura": lectura,
+        })
+    return filas
+
+
 def tabla_de_valores(resumen: dict[str, dict],
                     diagnostico: dict[str, dict] | None = None) -> list[dict]:
     """Un valor por fila, del mas barato de operar al mas caro.
@@ -137,6 +175,7 @@ def main() -> int:
                                  "escalera de liquidez de AAPL a CLOV, elegida "
                                  "para cubrir la banda entera y no una punta"),
         "valores": tabla_de_valores(resumen, diagnostico),
+        "en_cristiano": lectura_por_valor(resumen),
         "mediana_de_p90s": mediana_de_p90s,
         "maximo_de_p90s": round(max(p90s), 3),
         "activos": resumen,

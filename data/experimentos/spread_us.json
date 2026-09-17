@@ -1,5 +1,5 @@
 {
-  "medido": "2026-09-17T18:16:13.244385+00:00",
+  "medido": "2026-09-17T18:19:00.493422+00:00",
   "fuente": "corwin-schultz sobre high/low/close diario del lago",
   "aviso": "es un ESTIMADOR, no una medicion, y SOBRESTIMA el nivel en los valores liquidos: da ~50 bps para AAPL, cuya horquilla real es ~1 bp. El ORDEN entre valores si es fiable. Uselo como COTA SUPERIOR -lo que sobrevive a este coste sobrevive de verdad-, no como el coste real.",
   "limitacion": "da una horquilla por sesion, no por orden: no recoge que la horquilla se abre en la apertura ni que una orden grande se come varios niveles del libro",
@@ -177,6 +177,134 @@
       "peor_mes_bps": 615.26,
       "meses": 33,
       "estimaciones_absurdas_pct": 41.07
+    }
+  ],
+  "en_cristiano": [
+    {
+      "valor": "JPM",
+      "cuesta_entrar_y_salir_pct": 0.44,
+      "hay_que_ganar_mas_de": "0.44 % por operacion",
+      "lectura": "de los baratos de operar, dentro de esta muestra"
+    },
+    {
+      "valor": "XOM",
+      "cuesta_entrar_y_salir_pct": 0.48,
+      "hay_que_ganar_mas_de": "0.48 % por operacion",
+      "lectura": "de los baratos de operar, dentro de esta muestra"
+    },
+    {
+      "valor": "MSFT",
+      "cuesta_entrar_y_salir_pct": 0.48,
+      "hay_que_ganar_mas_de": "0.48 % por operacion",
+      "lectura": "de los baratos de operar, dentro de esta muestra"
+    },
+    {
+      "valor": "KHC",
+      "cuesta_entrar_y_salir_pct": 0.48,
+      "hay_que_ganar_mas_de": "0.48 % por operacion",
+      "lectura": "de los baratos de operar, dentro de esta muestra"
+    },
+    {
+      "valor": "PFE",
+      "cuesta_entrar_y_salir_pct": 0.49,
+      "hay_que_ganar_mas_de": "0.49 % por operacion",
+      "lectura": "de los baratos de operar, dentro de esta muestra"
+    },
+    {
+      "valor": "AAPL",
+      "cuesta_entrar_y_salir_pct": 0.49,
+      "hay_que_ganar_mas_de": "0.49 % por operacion",
+      "lectura": "de los baratos de operar, dentro de esta muestra"
+    },
+    {
+      "valor": "AMZN",
+      "cuesta_entrar_y_salir_pct": 0.54,
+      "hay_que_ganar_mas_de": "0.54 % por operacion",
+      "lectura": "caro: solo para ideas que ganen bastante por operacion"
+    },
+    {
+      "valor": "GOOGL",
+      "cuesta_entrar_y_salir_pct": 0.55,
+      "hay_que_ganar_mas_de": "0.55 % por operacion",
+      "lectura": "caro: solo para ideas que ganen bastante por operacion"
+    },
+    {
+      "valor": "META",
+      "cuesta_entrar_y_salir_pct": 0.63,
+      "hay_que_ganar_mas_de": "0.63 % por operacion",
+      "lectura": "caro: solo para ideas que ganen bastante por operacion"
+    },
+    {
+      "valor": "F",
+      "cuesta_entrar_y_salir_pct": 0.63,
+      "hay_que_ganar_mas_de": "0.63 % por operacion",
+      "lectura": "caro: solo para ideas que ganen bastante por operacion"
+    },
+    {
+      "valor": "SIRI",
+      "cuesta_entrar_y_salir_pct": 0.67,
+      "hay_que_ganar_mas_de": "0.67 % por operacion",
+      "lectura": "caro: solo para ideas que ganen bastante por operacion"
+    },
+    {
+      "valor": "HAL",
+      "cuesta_entrar_y_salir_pct": 0.76,
+      "hay_que_ganar_mas_de": "0.76 % por operacion",
+      "lectura": "caro: solo para ideas que ganen bastante por operacion"
+    },
+    {
+      "valor": "AAL",
+      "cuesta_entrar_y_salir_pct": 0.8,
+      "hay_que_ganar_mas_de": "0.80 % por operacion",
+      "lectura": "caro: solo para ideas que ganen bastante por operacion"
+    },
+    {
+      "valor": "NVDA",
+      "cuesta_entrar_y_salir_pct": 0.82,
+      "hay_que_ganar_mas_de": "0.82 % por operacion",
+      "lectura": "caro: solo para ideas que ganen bastante por operacion"
+    },
+    {
+      "valor": "NCLH",
+      "cuesta_entrar_y_salir_pct": 0.93,
+      "hay_que_ganar_mas_de": "0.93 % por operacion",
+      "lectura": "caro: solo para ideas que ganen bastante por operacion"
+    },
+    {
+      "valor": "RIG",
+      "cuesta_entrar_y_salir_pct": 1.28,
+      "hay_que_ganar_mas_de": "1.28 % por operacion",
+      "lectura": "caro: solo para ideas que ganen bastante por operacion"
+    },
+    {
+      "valor": "PLUG",
+      "cuesta_entrar_y_salir_pct": 1.56,
+      "hay_que_ganar_mas_de": "1.56 % por operacion",
+      "lectura": "carisimo: casi nada compensa entrar y salir aqui"
+    },
+    {
+      "valor": "CLOV",
+      "cuesta_entrar_y_salir_pct": 1.59,
+      "hay_que_ganar_mas_de": "1.59 % por operacion",
+      "lectura": "carisimo: casi nada compensa entrar y salir aqui"
+    },
+    {
+      "valor": "GEVO",
+      "cuesta_entrar_y_salir_pct": 1.98,
+      "hay_que_ganar_mas_de": "1.98 % por operacion",
+      "lectura": "carisimo: casi nada compensa entrar y salir aqui"
+    },
+    {
+      "valor": "FCEL",
+      "cuesta_entrar_y_salir_pct": 2.03,
+      "hay_que_ganar_mas_de": "2.03 % por operacion",
+      "lectura": "carisimo: casi nada compensa entrar y salir aqui"
+    },
+    {
+      "valor": "SOUN",
+      "cuesta_entrar_y_salir_pct": 2.29,
+      "hay_que_ganar_mas_de": "2.29 % por operacion",
+      "lectura": "carisimo: casi nada compensa entrar y salir aqui"
     }
   ],
   "mediana_de_p90s": 111.59,

@@ -255,6 +255,47 @@ def titular(r, refutada: bool, percentil: float) -> str:
             f"de los sorteos")
 
 
+def en_cristiano(r, refutada: bool, percentil: float) -> list[dict]:
+    """La misma medicion, contestando las preguntas que se hace cualquiera.
+
+    Existe porque el resto del JSON esta escrito para quien ya sabe que es un
+    exceso medio y un percentil contra el azar. Estas cuatro filas no aportan
+    un dato nuevo: reordenan los que hay para que se entiendan sin eso, y
+    sobre todo para que la tercera pregunta tenga una respuesta visible.
+    """
+    tramos = list(r.por_tramo.items())
+    cambia = len(tramos) == 2 and (tramos[0][1] < 0) != (tramos[1][1] < 0)
+    porques = []
+    if r.exceso_medio_pct >= 0:
+        porques.append("el efecto va en el sentido CONTRARIO al que predecia")
+    if percentil < PERCENTIL_EXIGIDO:
+        porques.append(f"el azar lo iguala o lo mejora en el {100 - percentil:.0f} % "
+                      f"de los sorteos")
+    if cambia:
+        porques.append(f"cambia de signo entre epocas ({tramos[0][0]} contra "
+                      f"{tramos[1][0]})")
+    return [
+        {"pregunta": "¿Que se ha probado?",
+         "respuesta": "Si anunciar una ampliacion de capital hace caer la accion "
+                      "durante las 5 sesiones siguientes."},
+        {"pregunta": "¿Que ha salido?",
+         "respuesta": f"Lo contrario de lo predicho: {r.exceso_medio_pct:+.3f} % de "
+                      f"media sobre {r.n:,} anuncios en {r.n_empresas} empresas."
+                      if r.exceso_medio_pct >= 0 else
+                      f"{r.exceso_medio_pct:+.3f} % de media sobre {r.n:,} anuncios "
+                      f"en {r.n_empresas} empresas."},
+        {"pregunta": "¿Y esto en que acciones me dice que invierta?",
+         "respuesta": "En ninguna. Esto mide si una IDEA tiene ventaja, no si una "
+                      "accion esta barata. La idea no la tiene, asi que no hay nada "
+                      "que comprar por este motivo."},
+        {"pregunta": "¿Por que no vale?",
+         "respuesta": ("; ".join(porques).capitalize() + "."
+                       if porques else
+                       "Pasa todos los criterios; sobrevive, que no es lo mismo que "
+                       "funcionar.")},
+    ]
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--base", default="data/bigrocketcaps.duckdb")
@@ -326,6 +367,9 @@ lago. Se suben una vez con:
                           "a 5 sesiones"),
         "tramos": tabla_de_tramos(resultado["resultado"].por_tramo, DIRECCION),
         "criterios_tabla": tabla_de_criterios(resultado["criterios"]),
+        "en_cristiano": en_cristiano(resultado["resultado"],
+                                    resultado["refutada"],
+                                    resultado["percentil_azar"]),
         "criterios": {k: {"supera": v["supera"], "valor": v["valor"]}
                      for k, v in resultado["criterios"].items()},
         "refutada_sin_coste": resultado["refutada"],
