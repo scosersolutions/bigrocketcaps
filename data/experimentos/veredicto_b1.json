@@ -1,6 +1,6 @@
 {
   "hipotesis": "B1",
-  "medido": "2026-09-17T17:11:11.210282+00:00",
+  "medido": "2026-09-17T17:44:59.528341+00:00",
   "n": 3852,
   "n_empresas": 671,
   "exceso_medio_pct": 0.2013,
@@ -11,6 +11,59 @@
     "2022-2024": -0.17
   },
   "percentil_azar": 69.5,
+  "titular": "B1 REFUTADA · exceso medio +0.201 % a 5 sesiones sobre 3,852 anuncios de ampliacion de capital en 671 empresas · el azar lo iguala o lo mejora en el 30 % de los sorteos",
+  "veredicto": "REFUTADA",
+  "hipotesis_dice": "una ampliacion de capital produce exceso NEGATIVO a 5 sesiones",
+  "tramos": [
+    {
+      "periodo": "2018-2021",
+      "exceso_medio": "+0.464 %",
+      "lectura": "en contra (la hipotesis predice negativo)"
+    },
+    {
+      "periodo": "2022-2024",
+      "exceso_medio": "-0.170 %",
+      "lectura": "a favor (la hipotesis predice negativo)"
+    }
+  ],
+  "criterios_tabla": [
+    {
+      "criterio": "Exceso negativo",
+      "resultado": "REFUTA",
+      "valor": "+0.2013%",
+      "se_refuta_si": "exceso medio >= 0"
+    },
+    {
+      "criterio": "Supera el azar",
+      "resultado": "REFUTA",
+      "valor": "percentil 69.5",
+      "se_refuta_si": "percentil < 95"
+    },
+    {
+      "criterio": "Sobrevive al retraso de una sesion",
+      "resultado": "REFUTA",
+      "valor": "+0.2622%",
+      "se_refuta_si": "el efecto desaparece (deja de ser negativo)"
+    },
+    {
+      "criterio": "Estable entre tramos",
+      "resultado": "REFUTA",
+      "valor": "{'2018-2021': 0.464, '2022-2024': -0.17}",
+      "se_refuta_si": "cambia de signo entre 2018-2021 y 2022-2024"
+    },
+    {
+      "criterio": "Al menos 20 empresas",
+      "resultado": "PASA",
+      "valor": "671 empresas",
+      "se_refuta_si": "< 20 empresas distintas"
+    },
+    {
+      "criterio": "Mediana no es cola",
+      "resultado": "PASA",
+      "valor": "mediana +0.0935% / media +0.2013%",
+      "se_refuta_si": "mediana positiva con media negativa"
+    }
+  ],
   "criterios": {
     "1_exceso_negativo": {
       "supera": false,
