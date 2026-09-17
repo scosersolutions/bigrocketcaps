@@ -1,6 +1,6 @@
 {
   "hipotesis": "B1",
-  "medido": "2026-09-17T17:44:59.528341+00:00",
+  "medido": "2026-09-17T18:23:32.933186+00:00",
   "n": 3852,
   "n_empresas": 671,
   "exceso_medio_pct": 0.2013,
@@ -62,6 +62,24 @@
       "resultado": "PASA",
       "valor": "mediana +0.0935% / media +0.2013%",
       "se_refuta_si": "mediana positiva con media negativa"
+    }
+  ],
+  "en_cristiano": [
+    {
+      "pregunta": "¿Que se ha probado?",
+      "respuesta": "Si anunciar una ampliacion de capital hace caer la accion durante las 5 sesiones siguientes."
+    },
+    {
+      "pregunta": "¿Que ha salido?",
+      "respuesta": "Lo contrario de lo predicho: +0.201 % de media sobre 3,852 anuncios en 671 empresas."
+    },
+    {
+      "pregunta": "¿Y esto en que acciones me dice que invierta?",
+      "respuesta": "En ninguna. Esto mide si una IDEA tiene ventaja, no si una accion esta barata. La idea no la tiene, asi que no hay nada que comprar por este motivo."
+    },
+    {
+      "pregunta": "¿Por que no vale?",
+      "respuesta": "El efecto va en el sentido contrario al que predecia; el azar lo iguala o lo mejora en el 30 % de los sorteos; cambia de signo entre epocas (2018-2021 contra 2022-2024)."
     }
   ],
   "criterios": {
