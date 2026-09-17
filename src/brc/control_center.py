@@ -36,6 +36,14 @@ BASE_BACKOFF_SECONDS = 0.3
 MAX_BACKOFF_SECONDS = 8.0
 MAX_ERROR_LENGTH = 4000
 
+#: Sin esto urllib manda `Python-urllib/3.12`, y Cloudflare lo bloquea con
+#: un 403 ANTES de que la peticion llegue al Worker. El cliente se quedaba
+#: sin saber por que: esa respuesta es HTML, asi que el SDK solo podia
+#: decir `invalid_response`. Comprobado el 2026-09-17 contra el despliegue
+#: real: con este User-Agent responde 401 -token invalido, o sea que
+#: llega-; con el de urllib, 403 sin llegar.
+USER_AGENT = "control-center-sdk-python/1 (+https://github.com/scosersolutions/control-center)"
+
 
 class ControlCenterError(Exception):
     """Error de la API (codigo + mensaje del sobre) o fallo de red tras agotar reintentos."""
@@ -221,7 +229,10 @@ class ControlCenter:
     def _request(self, method: str, path: str, body: Optional[dict[str, Any]] = None) -> dict[str, Any]:
         url = f"{self.base_url}{path}"
         data: Optional[bytes] = None
-        headers: dict[str, str] = {"Authorization": f"Bearer {self.token}"}
+        headers: dict[str, str] = {
+            "Authorization": f"Bearer {self.token}",
+            "User-Agent": USER_AGENT,
+        }
 
         if body is not None:
             payload = json.dumps(body).encode("utf-8")
