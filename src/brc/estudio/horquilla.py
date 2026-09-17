@@ -55,7 +55,7 @@ import polars as pl
 K = 3 - 2 * (2 ** 0.5)
 
 
-def corwin_schultz(precios: pl.DataFrame) -> pl.DataFrame:
+def corwin_schultz(precios: pl.DataFrame, *, recortar: bool = True) -> pl.DataFrame:
     """Horquilla estimada por sesion, en porcentaje del precio.
 
     `precios` necesita (activo, fecha, high, low, close). Devuelve (activo, fecha,
@@ -99,12 +99,18 @@ def corwin_schultz(precios: pl.DataFrame) -> pl.DataFrame:
     alfa = ((2 * beta).sqrt() - beta.sqrt()) / K - (gamma / K).sqrt()
     s = 2 * (alfa.exp() - 1) / (1 + alfa.exp())
 
-    return d.with_columns(
-        pl.when(s > 0).then(s * 100).otherwise(0.0).alias("horquilla_pct")
-    ).select("activo", "fecha", "horquilla_pct")
+    valor = (
+        pl.when(s > 0).then(s * 100).otherwise(0.0) if recortar
+        # Sin recortar se conserva el SIGNO, que es informacion: ver
+        # `frecuencia_negativos`. La magnitud negativa no significa nada, asi
+        # que se devuelve el valor crudo tal cual sale de la formula.
+        else pl.when(s > 0).then(s * 100).otherwise(s * 100)
+    )
+    return d.with_columns(valor.alias("horquilla_pct")).select(
+        "activo", "fecha", "horquilla_pct")
 
 
-def abdi_ranaldo(precios: pl.DataFrame) -> pl.DataFrame:
+def abdi_ranaldo(precios: pl.DataFrame, *, recortar: bool = True) -> pl.DataFrame:
     """Horquilla estimada por sesion con el estimador CHL, en porcentaje.
 
     Abdi, Farshid, y Angelo Ranaldo (2017), "A Simple Estimation of Bid-Ask
@@ -141,9 +147,89 @@ def abdi_ranaldo(precios: pl.DataFrame) -> pl.DataFrame:
     eta1 = (pl.col("high").log() + pl.col("low").log()) / 2
     s2 = 4 * (pl.col("_c0").log() - eta0) * (pl.col("_c0").log() - eta1)
 
-    return d.with_columns(
-        pl.when(s2 > 0).then(s2.sqrt() * 100).otherwise(0.0).alias("horquilla_pct")
-    ).select("activo", "fecha", "horquilla_pct")
+    valor = (
+        pl.when(s2 > 0).then(s2.sqrt() * 100).otherwise(0.0) if recortar
+        # Sin recortar se conserva el SIGNO, que es informacion: ver
+        # `frecuencia_negativos`. La magnitud negativa no significa nada, asi
+        # que se devuelve el valor crudo tal cual sale de la formula.
+        else pl.when(s2 > 0).then(s2.sqrt() * 100).otherwise(-((-s2).sqrt()) * 100)
+    )
+    return d.with_columns(valor.alias("horquilla_pct")).select(
+        "activo", "fecha", "horquilla_pct")
+
+
+#: Regla de negatividad de Tremacoldi-Rossi e Irwin (2021), seccion 5: con una
+#: fraccion de estimaciones diarias negativas por encima del 40 %, la cota
+#: implicita sobre el spread VERDADERO es del 0,2 %. Las dos cifras son suyas,
+#: no elegidas aqui.
+UMBRAL_NEGATIVOS = 0.40
+COTA_SI_MUCHOS_NEGATIVOS_BPS = 20.0
+
+
+def frecuencia_negativos(
+    precios: pl.DataFrame, *, metodo=corwin_schultz,
+) -> dict[str, float]:
+    """Fraccion de estimaciones diarias que salen NEGATIVAS, por activo.
+
+    Es el dato que este modulo tiraba a la basura. Poner las negativas a cero
+    es lo que manda el articulo original para promediar, pero cuantas hubo es
+    informacion sobre el propio estimador: una horquilla negativa no existe, y
+    que aparezca dice que el rango del par de sesiones no converge, que es lo
+    que pasa cuando la horquilla verdadera es pequeña frente a la volatilidad.
+
+        "lower levels of spread (and higher price volatility) increase the
+        frequency of negative estimates"
+        - Tremacoldi-Rossi e Irwin (2021)
+    """
+    crudas = metodo(precios, recortar=False)
+    if crudas.is_empty():
+        return {}
+    agregado = crudas.group_by("activo").agg(
+        (pl.col("horquilla_pct") < 0).mean().alias("negativos")
+    )
+    return {f["activo"]: round(f["negativos"], 4) for f in agregado.to_dicts()}
+
+
+def diagnostico_sesgo(
+    precios: pl.DataFrame, *, metodo=corwin_schultz,
+) -> dict[str, dict]:
+    """Por activo: cuantas estimaciones salieron negativas, y si eso es mala señal.
+
+    ## Lo que se midio, y lo que NO se concluye
+
+    El articulo da una regla: con mas del 40 % de estimaciones negativas, la
+    cota implicita sobre el spread verdadero es 0,2 %. Aplicada activo por
+    activo a esta muestra, marca a 16 de 21 -incluidos SOUN, FCEL y PLUG-, y
+    "la horquilla de SOUN es como mucho 20 bps" no se lo cree nadie que haya
+    intentado comprarlo. Asi que la cota NO se publica: la regla vive en su
+    articulo, con el resto de su test, y sacarla de ahi la rompe.
+
+    Lo que si dice el numero, y es mas util de lo que parece: la fraccion de
+    negativas ronda el 40 % en TODA la muestra, de AAPL a SOUN. El articulo
+    demuestra que esa fraccion sube cuando la horquilla verdadera es pequeña
+    frente a la volatilidad, o sea cuando el estimador esta fuera de su zona
+    buena. Que salga plana y alta en los 21 valores significa que el problema
+    de nivel no es solo de los liquidos: es de todo el universo que miramos.
+
+    Eso convierte una sospecha en una medida. Antes se sabia que AAPL a 49 bps
+    era absurdo; ahora se sabe que tampoco hay que fiarse del 229 de SOUN.
+
+    ## Lo que falta
+
+    El test completo del sesgo de momento -`(1+sqrt(2))*r_min/(phi-sqrt(2))`
+    con los dos predictores del signo del sesgo de muestra pequeña- da una cota
+    por activo de verdad. Depende de definiciones que no he podido verificar
+    enteras, y un numero mal implementado que parece riguroso es peor que no
+    tenerlo. Queda citado y pendiente, no escondido.
+    """
+    negativos = frecuencia_negativos(precios, metodo=metodo)
+    return {
+        activo: {
+            "negativos_pct": round(fraccion * 100, 2),
+            "fuera_de_zona_buena": fraccion >= UMBRAL_NEGATIVOS,
+        }
+        for activo, fraccion in negativos.items()
+    }
 
 
 def por_mes(estimaciones: pl.DataFrame) -> pl.DataFrame:

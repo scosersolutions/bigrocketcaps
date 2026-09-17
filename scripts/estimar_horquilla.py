@@ -24,7 +24,8 @@ import duckdb
 import polars as pl
 
 from brc.datos import lago
-from brc.estudio.horquilla import abdi_ranaldo, corwin_schultz, resumen_por_activo
+from brc.estudio.horquilla import (abdi_ranaldo, corwin_schultz,
+                                   diagnostico_sesgo, resumen_por_activo)
 
 #: Los mismos 24 valores que muestreaba el medidor, y por el mismo motivo: van
 #: de AAPL a CLOV a proposito, para cubrir la banda de liquidez entera en vez
@@ -45,7 +46,8 @@ def cargar(con: duckdb.DuckDBPyConnection, anyos: list[int],
     ).pl()
 
 
-def tabla_de_valores(resumen: dict[str, dict]) -> list[dict]:
+def tabla_de_valores(resumen: dict[str, dict],
+                    diagnostico: dict[str, dict] | None = None) -> list[dict]:
     """Un valor por fila, del mas barato de operar al mas caro.
 
     `activos` es un diccionario de ticker a objeto, y eso el Centro de Control
@@ -53,11 +55,16 @@ def tabla_de_valores(resumen: dict[str, dict]) -> list[dict]:
     aparecia sola, sin decir sobre QUE valores se ha calculado. Esta lista es
     la respuesta a esa pregunta.
     """
+    diagnostico = diagnostico or {}
     return [{"valor": t,
              "horquilla_tipica_bps": v["mediana_bps"],
              "mal_mes_bps": v["p90_bps"],
              "peor_mes_bps": v["max_bps"],
-             "meses": v["n"]}
+             "meses": v["n"],
+             # Cuantas estimaciones diarias salieron negativas. Cuanto mas
+             # alto, menos fiable es el NIVEL de la fila. Ver
+             # `brc.estudio.horquilla.diagnostico_sesgo`.
+             "estimaciones_absurdas_pct": diagnostico.get(t, {}).get("negativos_pct")}
             for t, v in sorted(resumen.items(), key=lambda kv: kv[1]["mediana_bps"])]
 
 
@@ -85,6 +92,7 @@ def main() -> int:
     metodo = corwin_schultz if a.estimador == "cs" else abdi_ranaldo
     estimaciones = metodo(precios)
     resumen = resumen_por_activo(estimaciones)
+    diagnostico = diagnostico_sesgo(precios, metodo=metodo)
     if not resumen:
         print("ningun par de sesiones utilizable")
         return 1
@@ -115,13 +123,20 @@ def main() -> int:
                        "orden grande se come varios niveles del libro"),
         "periodo": f"{a.anyo_desde}-{a.anyo_hasta}",
         "sesiones": estimaciones.height,
+        "fuera_de_zona_buena": sum(
+            1 for v in diagnostico.values() if v["fuera_de_zona_buena"]),
+        "que_significa_eso": (
+            "cuantos de los valores tienen mas del 40 % de estimaciones diarias "
+            "negativas. Una horquilla negativa no existe: que aparezcan tantas "
+            "dice que el estimador esta fuera de su zona buena, o sea que el "
+            "NIVEL no es de fiar. El ORDEN entre valores si lo es."),
         "titular": (f"Horquilla estimada de {len(resumen)} valores US entre "
                    f"{a.anyo_desde} y {a.anyo_hasta}. Es una COTA SUPERIOR: "
                    f"sirve para absolver una hipotesis, no para condenarla"),
         "que_son_estos_valores": ("los mismos que muestreaba el medidor: una "
                                  "escalera de liquidez de AAPL a CLOV, elegida "
                                  "para cubrir la banda entera y no una punta"),
-        "valores": tabla_de_valores(resumen),
+        "valores": tabla_de_valores(resumen, diagnostico),
         "mediana_de_p90s": mediana_de_p90s,
         "maximo_de_p90s": round(max(p90s), 3),
         "activos": resumen,

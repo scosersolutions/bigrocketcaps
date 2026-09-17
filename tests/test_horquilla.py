@@ -13,8 +13,10 @@ from datetime import date
 import polars as pl
 import pytest
 
-from brc.estudio.horquilla import (abdi_ranaldo, corwin_schultz,
-                                   por_mes, resumen_por_activo)
+from brc.estudio.horquilla import (UMBRAL_NEGATIVOS, abdi_ranaldo,
+                                   corwin_schultz, diagnostico_sesgo,
+                                   frecuencia_negativos, por_mes,
+                                   resumen_por_activo)
 
 
 def _sesiones(activo: str, precios_y_spread: list[tuple[float, float]]) -> pl.DataFrame:
@@ -159,3 +161,42 @@ class TestResumen:
 
     def test_sin_estimaciones_devuelve_vacio(self):
         assert resumen_por_activo(pl.DataFrame()) == {}
+
+
+class TestNegativos:
+    """La informacion que se tiraba al poner las negativas a cero."""
+
+    def test_cuenta_las_que_salen_negativas_antes_de_recortar(self):
+        d = pl.concat([
+            # Par que da negativo: rangos pegados y sin solapar.
+            pl.DataFrame([_dia(1, 100.5, 99.5, 100.0), _dia(2, 105.0, 104.0, 104.5)]),
+            # Par que da positivo: dos dias identicos, precio quieto.
+            pl.DataFrame([_dia(3, 100.5, 99.5, 100.0), _dia(4, 100.5, 99.5, 100.0)]),
+        ])
+        # Tres pares (2-1, 3-2, 4-3); el 3-2 tambien sale negativo al bajar.
+        f = frecuencia_negativos(d)
+        assert 0 < f["A"] < 1
+
+    def test_sin_recortar_se_conserva_el_signo(self):
+        d = pl.DataFrame([_dia(1, 100.5, 99.5, 100.0), _dia(2, 105.0, 104.0, 104.5)])
+        assert corwin_schultz(d)["horquilla_pct"][0] == 0.0
+        assert corwin_schultz(d, recortar=False)["horquilla_pct"][0] < 0
+
+    def test_un_activo_sin_negativas_da_cero(self):
+        d = _sesiones("A", [(100.0, 0.05)] * 4)
+        assert frecuencia_negativos(d)["A"] == 0.0
+
+    def test_marca_fuera_de_zona_buena_por_encima_del_umbral(self):
+        d = _sesiones("A", [(100.0, 0.05)] * 4)
+        diag = diagnostico_sesgo(d)
+        assert diag["A"]["negativos_pct"] == 0.0
+        assert diag["A"]["fuera_de_zona_buena"] is False
+        assert UMBRAL_NEGATIVOS == 0.40
+
+    def test_tambien_funciona_con_abdi_ranaldo(self):
+        d = _sesiones("A", [(100.0, 0.05)] * 4)
+        assert frecuencia_negativos(d, metodo=abdi_ranaldo)["A"] == 0.0
+
+    def test_sin_datos_no_inventa_nada(self):
+        assert frecuencia_negativos(pl.DataFrame()) == {}
+        assert diagnostico_sesgo(pl.DataFrame()) == {}
