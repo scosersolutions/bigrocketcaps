@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import statistics
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -25,7 +26,8 @@ import polars as pl
 
 from brc.datos import lago
 from brc.estudio.horquilla import (abdi_ranaldo, corwin_schultz,
-                                   diagnostico_sesgo, resumen_por_activo)
+                                   cota_por_activo, diagnostico_sesgo,
+                                   resumen_por_activo)
 
 #: Los mismos 24 valores que muestreaba el medidor, y por el mismo motivo: van
 #: de AAPL a CLOV a proposito, para cubrir la banda de liquidez entera en vez
@@ -85,7 +87,8 @@ def lectura_por_valor(resumen: dict[str, dict]) -> list[dict]:
 
 
 def tabla_de_valores(resumen: dict[str, dict],
-                    diagnostico: dict[str, dict] | None = None) -> list[dict]:
+                    diagnostico: dict[str, dict] | None = None,
+                    cotas: dict[str, dict] | None = None) -> list[dict]:
     """Un valor por fila, del mas barato de operar al mas caro.
 
     `activos` es un diccionario de ticker a objeto, y eso el Centro de Control
@@ -102,7 +105,10 @@ def tabla_de_valores(resumen: dict[str, dict],
              # Cuantas estimaciones diarias salieron negativas. Cuanto mas
              # alto, menos fiable es el NIVEL de la fila. Ver
              # `brc.estudio.horquilla.diagnostico_sesgo`.
-             "estimaciones_absurdas_pct": diagnostico.get(t, {}).get("negativos_pct")}
+             "estimaciones_absurdas_pct": diagnostico.get(t, {}).get("negativos_pct"),
+             # De lo que dice el estimador, cuanto es sesgo DEMOSTRADO. Ver
+             # `brc.estudio.horquilla.cota_por_activo`.
+             "sesgo_minimo_pct": (cotas or {}).get(t, {}).get("sesgo_minimo_pct")}
             for t, v in sorted(resumen.items(), key=lambda kv: kv[1]["mediana_bps"])]
 
 
@@ -131,6 +137,8 @@ def main() -> int:
     estimaciones = metodo(precios)
     resumen = resumen_por_activo(estimaciones)
     diagnostico = diagnostico_sesgo(precios, metodo=metodo)
+    # La cota solo esta derivada para el estimador de rango alto-bajo.
+    cotas = cota_por_activo(precios) if a.estimador == "cs" else {}
     if not resumen:
         print("ningun par de sesiones utilizable")
         return 1
@@ -174,7 +182,11 @@ def main() -> int:
         "que_son_estos_valores": ("los mismos que muestreaba el medidor: una "
                                  "escalera de liquidez de AAPL a CLOV, elegida "
                                  "para cubrir la banda entera y no una punta"),
-        "valores": tabla_de_valores(resumen, diagnostico),
+        "valores": tabla_de_valores(resumen, diagnostico, cotas),
+        "sesgo_minimo_mediano_pct": (
+            round(statistics.median(
+                [v["sesgo_minimo_pct"] for v in cotas.values()]), 1)
+            if cotas else None),
         "en_cristiano": lectura_por_valor(resumen),
         "mediana_de_p90s": mediana_de_p90s,
         "maximo_de_p90s": round(max(p90s), 3),

@@ -14,6 +14,7 @@ import polars as pl
 import pytest
 
 from brc.estudio.horquilla import (UMBRAL_NEGATIVOS, abdi_ranaldo,
+                                   cota_por_activo, cota_superior,
                                    corwin_schultz, diagnostico_sesgo,
                                    frecuencia_negativos, por_mes,
                                    resumen_por_activo)
@@ -200,3 +201,45 @@ class TestNegativos:
     def test_sin_datos_no_inventa_nada(self):
         assert frecuencia_negativos(pl.DataFrame()) == {}
         assert diagnostico_sesgo(pl.DataFrame()) == {}
+
+
+class TestCotaSuperior:
+    """El sesgo de momento de Tremacoldi-Rossi e Irwin (2021)."""
+
+    def test_sin_volatilidad_el_sesgo_de_momento_es_CERO(self):
+        """Dos dias de rango identico dan kappa=1, luego phi=sqrt(2), luego
+        sesgo de momento exactamente 0. La cota tiene que coincidir con la
+        estimacion, y las dos con la horquilla de verdad. Sale del algebra."""
+        d = _sesiones("A", [(100.0, 0.02), (100.0, 0.02)])
+        c = cota_superior(d)
+        assert c.height == 1
+        assert c["cota_pct"][0] == pytest.approx(2.0, rel=1e-9)
+        assert c["cota_pct"][0] == pytest.approx(c["estimacion_pct"][0], rel=1e-12)
+
+    def test_con_rangos_distintos_la_cota_baja_de_la_estimacion(self):
+        """phi > sqrt(2) en cuanto los dos dias no miden lo mismo, y el sesgo
+        de momento es no negativo por construccion: la cota nunca sube."""
+        d = pl.DataFrame([_dia(1, 101.0, 99.0, 100.0), _dia(2, 100.4, 99.6, 100.0)])
+        c = cota_superior(d)
+        if c.height:
+            assert c["cota_pct"][0] < c["estimacion_pct"][0]
+
+    def test_solo_acota_donde_el_articulo_dice_que_puede(self):
+        """Sin estimacion positiva no hay nada que acotar: esas sesiones no
+        salen, en vez de salir con un numero inventado."""
+        d = pl.DataFrame([_dia(1, 100.5, 99.5, 100.0), _dia(2, 105.0, 104.0, 104.5)])
+        assert corwin_schultz(d, recortar=False)["horquilla_pct"][0] < 0
+        assert cota_superior(d).is_empty()
+
+    def test_el_resumen_compara_las_MISMAS_sesiones(self):
+        """Comparar la cota con la estimacion de todas las sesiones daria que
+        acotar empeora, que es la lectura absurda que este resumen evita."""
+        d = _sesiones("A", [(100.0, 0.02)] * 6)
+        r = cota_por_activo(d)["A"]
+        assert r["cota_bps"] == pytest.approx(r["estimacion_cruda_bps"])
+        assert r["sesgo_minimo_pct"] == 0.0
+        assert r["sesiones_con_cota"] == 5
+
+    def test_sin_datos_no_inventa_nada(self):
+        assert cota_superior(pl.DataFrame()).is_empty()
+        assert cota_por_activo(pl.DataFrame()) == {}
