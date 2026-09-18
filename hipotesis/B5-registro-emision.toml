@@ -1,0 +1,107 @@
+# B5 · La dilución se conoce al REGISTRARLA, no al colocarla
+#
+# ESCRITA ANTES DE MEDIR. Ni una cifra de este fichero sale de haber mirado el
+# resultado. Si algo de aquí se cambia después de medir, la hipótesis queda
+# quemada y hay que abrir otra, que consume otro contraste.
+#
+# Forma parte del BLOQUE de cuatro (B2..B5) declarado de golpe el 2026-09-18.
+#
+# ## Aviso que hay que leer antes que nada
+#
+# Esta hipótesis nace de que B1 fue REFUTADA, y eso obliga a ser explícito para
+# que se pueda auditar: NO es B1 reintentada con otros parámetros hasta que
+# salga. Es otro evento —el registro, no la colocación—, con un mecanismo
+# distinto y su propio contraste declarado. Si lo que se hiciera fuera mover el
+# horizonte o los tramos de B1 buscando un número mejor, eso sí sería afinar
+# hasta que salga, y el resultado no valdría nada.
+#
+# La diferencia se puede comprobar: B1 usa `clase = emision_precio` (424B4,
+# 424B5: el folleto con el precio ya puesto) y B5 usa `clase =
+# registro_emision` (S-1, S-3: el registro previo). Son formularios distintos,
+# en fechas distintas, y la mayoría de las veces meses aparte.
+
+id = "B5"
+titulo = "Registrar una emisión produce exceso NEGATIVO a corto plazo"
+estado = "SELLADA"
+autor = "fernando"
+escrita = "2026-09-18"
+
+[mecanismo]
+# Por qué DEBERÍA funcionar, escrito antes de saber si funciona.
+texto = """
+La dilución sigue siendo dilución: acciones que antes no existían repartiéndose
+el mismo negocio. Lo que cambia respecto a B1 es CUÁNDO se entera el mercado.
+
+B1 midió el folleto con precio (424B), que es el último paso de un proceso
+público: para entonces la intención de emitir lleva semanas o meses registrada,
+los bancos han sondeado a los compradores y el papel ya está medio colocado. Si
+el mercado es medianamente eficiente, ahí no queda sorpresa que capturar —y de
+hecho B1 no encontró ninguna—.
+
+El registro (S-1, S-3) es el primer momento en que la intención se hace
+pública. Ahí sí hay información nueva: una empresa que hasta ayer no iba a
+emitir, hoy declara que puede hacerlo. Si la dilución mueve el precio en algún
+sitio, es en ese, no en el trámite final.
+
+Que B1 fallara es, de hecho, parte del argumento: si el efecto estuviera
+también en la colocación, habría aparecido allí. No aparecer allí es
+consistente con que la información ya estuviera incorporada antes.
+"""
+direccion = "corto"
+por_que_no_al_reves = """
+Se podría argumentar que registrar no es emitir: un S-3 en estantería (shelf)
+es una autorización que muchas empresas renuevan por rutina y no usan nunca. Si
+la mayoría de los registros no acaban en emisión, el mercado no debería
+reaccionar, y el exceso sería cero. Eso es el criterio de refutación 1, y
+mataría la hipótesis.
+
+Ese es el riesgo real de B5, y está escrito antes de medir: puede que se esté
+midiendo un trámite administrativo sin contenido.
+"""
+
+[universo]
+mercado = "stock_us"
+fuente_eventos = "eventos_societarios, clase = registro_emision"
+minimo_velas_previas = 60
+ventana = "validacion"
+
+[periodos]
+validacion = "2018-01-01 .. 2024-12-31"
+holdout = "2026-01-01 .. 2027-01-01"
+reserva = "2025-01-01 .. 2025-12-31"
+
+[senal]
+entrada = "cierre de la primera sesión en que el mercado pudo reaccionar"
+horizonte_sesiones = 5
+# El MISMO horizonte que B1, deliberadamente. Cambiarlo aquí haría imposible
+# saber si la diferencia entre las dos viene del evento o del horizonte.
+
+[referencia]
+tipo = "mediana del universo con precio ese día"
+
+[costes]
+modelo = "CostesPorAccion"
+nota = "Spread estimado, no medido. Manda el criterio de equilibrio."
+
+[criterios_refutacion]
+1 = "El exceso medio a 5 sesiones NO es negativo."
+2 = "El exceso no supera al azar: percentil < 95 contra carteras aleatorias equivalentes."
+3 = "El efecto desaparece al dejar pasar una sesión entre el evento y la entrada."
+4 = "El efecto vive solo en un tramo de años: cambia de signo entre 2018-2021 y 2022-2024."
+5 = "El efecto depende de menos de 20 empresas distintas."
+6 = "La mediana del exceso es positiva aunque la media sea negativa (sería cola, no efecto)."
+
+[presupuesto]
+contrastes = 1
+justificacion = """
+Una celda. El bloque B2..B5 consume 4 contrastes, declarados el mismo día y
+antes de medir ninguno. B1 ya gastó el suyo y sigue contando aunque esté
+refutada: el denominador mide el espacio mirado, no el que salió bien.
+"""
+
+[alcance]
+fuera = """
+NO se separa S-1 de S-3 ni el shelf del registro efectivo. NO se prueban otros
+horizontes. NO se cruza con si el registro acabó en colocación —eso usaría
+información del futuro—.
+"""

@@ -1,0 +1,99 @@
+# B3 · Prima de anuncio de resultados
+#
+# ESCRITA ANTES DE MEDIR. Ni una cifra de este fichero sale de haber mirado el
+# resultado. Si algo de aquí se cambia después de medir, la hipótesis queda
+# quemada y hay que abrir otra, que consume otro contraste.
+#
+# Forma parte del BLOQUE de cuatro (B2..B5) declarado de golpe el 2026-09-18.
+
+id = "B3"
+titulo = "Publicar resultados produce exceso POSITIVO a corto plazo, con independencia del signo de la sorpresa"
+estado = "SELLADA"
+autor = "fernando"
+escrita = "2026-09-18"
+
+[mecanismo]
+# Por qué DEBERÍA funcionar, escrito antes de saber si funciona.
+texto = """
+Esta hipótesis NO dice que los buenos resultados suban la acción. Eso sería
+trivial y, además, aquí no se puede probar: no tenemos estimaciones de
+analistas, así que no sabemos qué era «bueno». Es la decisión D5 del proyecto,
+y no se rodea.
+
+Lo que dice es otra cosa, y es lo interesante: que la acción rinde MÁS en los
+días de alrededor del anuncio que fuera de ellos, sea cual sea el resultado.
+Es la «prima de anuncio» (Beaver 1968; Frazzini y Lamont 2007). Hay dos
+explicaciones y las dos apuntan en la misma dirección:
+
+1. Compensación por riesgo. El anuncio concentra en un día casi toda la
+   incertidumbre del trimestre. Quien aguanta la posición ese día cobra por
+   soportarla; quien la evita, no.
+2. Atención. El anuncio pone a la empresa delante de miles de inversores
+   minoristas a la vez, y la atención compra más de lo que vende, porque para
+   comprar basta con fijarse y para vender hace falta tenerla ya.
+
+Si es lo primero, no es una anomalía: es un precio por un riesgo real, y habría
+que cobrarlo sabiendo lo que se está cobrando. La hipótesis mide si el exceso
+EXISTE, no si es gratis.
+"""
+direccion = "largo"
+por_que_no_al_reves = """
+Se podría argumentar que el anuncio es simétrico: tantas sorpresas malas como
+buenas, y el exceso medio debería ser cero. Ese es exactamente el criterio de
+refutación 1, y si sale cero la hipótesis muere. Lo que se afirma aquí es que
+la prima existe POR ENCIMA de esa simetría, y que por tanto no se cancela.
+"""
+
+[universo]
+mercado = "stock_us"
+fuente_eventos = "eventos_societarios, clase = resultados"
+minimo_velas_previas = 60
+ventana = "validacion"
+
+[periodos]
+validacion = "2018-01-01 .. 2024-12-31"
+holdout = "2026-01-01 .. 2027-01-01"
+reserva = "2025-01-01 .. 2025-12-31"
+
+[senal]
+entrada = "cierre de la primera sesión en que el mercado pudo reaccionar"
+horizonte_sesiones = 5
+# Mismo horizonte que el resto del bloque, fijado antes de medir. Ojo: entrar
+# al cierre de la sesión de reacción significa que el salto del anuncio ya ha
+# ocurrido. Si la prima estuviera ENTERA en ese salto, esta medición no la
+# vería y la hipótesis moriría por el criterio 1. Es un riesgo declarado, no
+# un descuido: cambiar la entrada después de ver el resultado la quemaría.
+
+[referencia]
+tipo = "mediana del universo con precio ese día"
+
+[costes]
+modelo = "CostesPorAccion"
+nota = """
+Spread estimado, no medido. Con 124.587 eventos, esta es la hipótesis del
+bloque con más probabilidad de mostrar un exceso pequeño pero estadísticamente
+sólido, y por tanto la que más depende del criterio de coste: un exceso de 10
+puntos básicos no sobrevive a una horquilla de 50.
+"""
+
+[criterios_refutacion]
+1 = "El exceso medio a 5 sesiones NO es positivo."
+2 = "El exceso no supera al azar: percentil < 95 contra carteras aleatorias equivalentes."
+3 = "El efecto desaparece al dejar pasar una sesión entre el evento y la entrada."
+4 = "El efecto vive solo en un tramo de años: cambia de signo entre 2018-2021 y 2022-2024."
+5 = "El efecto depende de menos de 20 empresas distintas."
+6 = "La mediana del exceso es negativa aunque la media sea positiva (sería cola, no efecto)."
+
+[presupuesto]
+contrastes = 1
+justificacion = """
+Una celda. El bloque B2..B5 consume 4 contrastes, declarados el mismo día y
+antes de medir ninguno.
+"""
+
+[alcance]
+fuera = """
+NO se condiciona al signo de la reacción (eso es otra hipótesis: la deriva
+post-anuncio, y necesita una decisión sobre cómo medir la sorpresa). NO se
+prueban otros horizontes. NO se separa por trimestre, sector ni tamaño.
+"""

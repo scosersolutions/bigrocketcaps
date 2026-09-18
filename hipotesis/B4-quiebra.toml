@@ -1,0 +1,94 @@
+# B4 · Venta forzada tras la quiebra
+#
+# ESCRITA ANTES DE MEDIR. Ni una cifra de este fichero sale de haber mirado el
+# resultado. Si algo de aquí se cambia después de medir, la hipótesis queda
+# quemada y hay que abrir otra, que consume otro contraste.
+#
+# Forma parte del BLOQUE de cuatro (B2..B5) declarado de golpe el 2026-09-18.
+
+id = "B4"
+titulo = "Declararse en quiebra produce exceso NEGATIVO en los días siguientes, más allá del golpe del día del anuncio"
+estado = "SELLADA"
+autor = "fernando"
+escrita = "2026-09-18"
+
+[mecanismo]
+# Por qué DEBERÍA funcionar, escrito antes de saber si funciona.
+texto = """
+El golpe del anuncio no es lo que se mide aquí —entramos al cierre de la sesión
+de reacción, cuando ya ha ocurrido—. Lo que se mide es lo que viene DESPUÉS, y
+el mecanismo es mecánico, no de opinión:
+
+1. Los índices expulsan a la empresa, y los fondos que los replican tienen que
+   vender, valga lo que valga. No deciden: cumplen.
+2. Muchos mandatos institucionales prohíben mantener emisores en concurso. La
+   venta no es una apuesta, es un requisito del folleto.
+3. La acción de una empresa en Capítulo 11 suele acabar sin valor, pero eso
+   tarda semanas en reconocerse. Mientras tanto se sigue cotizando, y el
+   reconocimiento llega a plazos.
+
+Las tres empujan en el mismo sentido y ninguna depende de que alguien acierte
+el valor de la empresa. Son ventas obligadas, que es la clase de fuerza que
+mueve precios sin informar de nada.
+"""
+direccion = "corto"
+por_que_no_al_reves = """
+Se podría argumentar lo contrario, y de hecho pasa: las acciones de empresas en
+quiebra tienen rebotes violentos, porque quedan muy pocas y muy baratas, y
+cualquier compra mueve el precio un 30 %. Eso es exactamente lo que el criterio
+6 comprueba —media negativa con mediana positiva sería justo eso: unos pocos
+rebotes gigantes escondiendo que la mayoría cae—.
+
+Con 829 eventos en todo el periodo, esta es además la hipótesis del bloque con
+la muestra más pequeña, y la que tiene más papeletas de morir por el criterio 5.
+Se declara igual: una hipótesis que muere por falta de muestra también cuenta.
+"""
+
+[universo]
+mercado = "stock_us"
+fuente_eventos = "eventos_societarios, clase = quiebra"
+minimo_velas_previas = 60
+ventana = "validacion"
+
+[periodos]
+validacion = "2018-01-01 .. 2024-12-31"
+holdout = "2026-01-01 .. 2027-01-01"
+reserva = "2025-01-01 .. 2025-12-31"
+
+[senal]
+entrada = "cierre de la primera sesión en que el mercado pudo reaccionar"
+horizonte_sesiones = 5
+
+[referencia]
+tipo = "mediana del universo con precio ese día"
+
+[costes]
+modelo = "CostesPorAccion"
+nota = """
+Aquí el coste no es un detalle: son las acciones más caras de operar que
+existen —precios de céntimos, horquillas enormes— y además ponerse corto exige
+encontrar papel prestado, que en una empresa en concurso es caro o imposible.
+El criterio de equilibrio dirá a qué horquilla deja de funcionar; el préstamo
+NO se modela y queda declarado como limitación.
+"""
+
+[criterios_refutacion]
+1 = "El exceso medio a 5 sesiones NO es negativo."
+2 = "El exceso no supera al azar: percentil < 95 contra carteras aleatorias equivalentes."
+3 = "El efecto desaparece al dejar pasar una sesión entre el evento y la entrada."
+4 = "El efecto vive solo en un tramo de años: cambia de signo entre 2018-2021 y 2022-2024."
+5 = "El efecto depende de menos de 20 empresas distintas."
+6 = "La mediana del exceso es positiva aunque la media sea negativa (sería cola, no efecto)."
+
+[presupuesto]
+contrastes = 1
+justificacion = """
+Una celda. El bloque B2..B5 consume 4 contrastes, declarados el mismo día y
+antes de medir ninguno.
+"""
+
+[alcance]
+fuera = """
+NO se separa Capítulo 7 de Capítulo 11. NO se modela el coste ni la
+disponibilidad del préstamo de títulos. NO se prueban otros horizontes.
+"""
