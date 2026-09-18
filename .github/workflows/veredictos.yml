@@ -108,6 +108,19 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add "$veredicto"
+          # Solo se commitea si cambio algo MAS que la marca de tiempo. Sin
+          # esto, cada ejecucion dejaba un commit identico al anterior salvo el
+          # campo `medido`: tres seguidos con la misma mediana de 111,59 bps. El
+          # historial dejaba de leerse como la serie -que es su unico motivo de
+          # existir- y ademas cada commit de adorno es una ocasion de chocar
+          # con quien este tocando el fichero en local.
+          sustancia=$(git diff --staged -U0 -- "$veredicto" \
+            | grep -E '^[+-]' | grep -vE '^(---|[+][+][+])' | grep -vc '"medido"' || true)
+          if [ "$sustancia" -eq 0 ]; then
+            echo "solo cambia la marca de tiempo: no se commitea"
+            git restore --staged "$veredicto"
+            exit 0
+          fi
           # El veredicto va en el asunto: asi `git log --oneline` se lee como
           # el historial de hipotesis muertas sin abrir un solo fichero.
           fallo=$(python -c "import json,sys;d=json.load(open(sys.argv[1]));print('REFUTADA' if d['refutada_sin_coste'] else 'SOBREVIVE')" "$veredicto")

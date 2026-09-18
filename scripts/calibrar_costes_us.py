@@ -31,6 +31,12 @@ from core.quant.costes import CostesPorAccion
 
 ENTRADA = Path("data/experimentos/spread_us.json")
 
+#: La horquilla ya no se mide -IEX cobra 500 $/mes por el libro-, se estima
+#: desde el rango diario. "estimado" pasa la puerta de `validar()` igual que
+#: "medido", porque no es un numero inventado, pero deja dicho en el modelo que
+#: sobrestima: sirve para absolver una hipotesis, no para condenarla.
+PROCEDENCIA = "estimado"
+
 
 def calibrar(datos: dict) -> dict:
     activos = datos.get("activos", {})
@@ -53,9 +59,10 @@ def calibrar(datos: dict) -> dict:
 
     return {
         "modelo_principal": CostesPorAccion(
-            spread_bps=mediana_de_p90s, spread_medido=True, origen_spread=origen),
+            spread_bps=mediana_de_p90s, procedencia=PROCEDENCIA,
+            origen_spread=origen),
         "modelo_conservador": CostesPorAccion(
-            spread_bps=maximo_de_p90s, spread_medido=True,
+            spread_bps=maximo_de_p90s, procedencia=PROCEDENCIA,
             origen_spread=origen.replace("mediana", "maximo")),
         "mediana_de_p90s": mediana_de_p90s,
         "maximo_de_p90s": maximo_de_p90s,

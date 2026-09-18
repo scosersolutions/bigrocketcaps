@@ -184,14 +184,41 @@ class CostesPorAccion(ModeloCostes):
     spread_bps: float = 3.0
     impacto_k: float = IMPACTO_K
     precio_referencia: float = 100.0
+    #: De dónde sale `spread_bps`. Tres estados y no dos, porque en acciones
+    #: US apareció un tercer caso que el booleano no sabía decir: un spread
+    #: ESTIMADO no está medido, pero tampoco es inventado.
+    #:
+    #: - `supuesto`: un número puesto a mano. El juez se niega a juzgar con él.
+    #: - `estimado`: derivado de datos reales (Corwin-Schultz sobre el rango
+    #:   diario). Pasa la puerta, pero sobrestima: sirve para absolver una
+    #:   hipótesis que sobreviva a él, no para condenar a la que muera.
+    #: - `medido`: del libro de órdenes.
+    procedencia: str = "supuesto"
+    #: Derivado de `procedencia`; existe porque es lo que mira
+    #: `core.backtest.validacion`, y lo que esa puerta pregunta de verdad no es
+    #: «¿está medido?» sino «¿es un número inventado?».
     spread_medido: bool = False
     origen_spread: str = "supuesto"
+
+    PROCEDENCIAS = ("supuesto", "estimado", "medido")
 
     def __post_init__(self) -> None:
         if self.por_accion < 0 or self.minimo_orden < 0:
             raise CostesError("comisiones negativas no tienen sentido aquí")
         if self.precio_referencia <= 0:
             raise CostesError("precio_referencia debe ser positivo")
+        if self.procedencia not in self.PROCEDENCIAS:
+            raise CostesError(
+                f"procedencia '{self.procedencia}' no existe; "
+                f"las que hay son {', '.join(self.PROCEDENCIAS)}")
+        # `spread_medido` se DERIVA para que no puedan contradecirse: un
+        # modelo que dijera a la vez "supuesto" y "medido" pasaría la puerta
+        # mintiendo, que es exactamente lo que la puerta existe para impedir.
+        object.__setattr__(self, "spread_medido", self.procedencia != "supuesto")
+        if self.procedencia != "supuesto" and self.origen_spread == "supuesto":
+            raise CostesError(
+                f"un spread {self.procedencia} tiene que decir de dónde sale: "
+                f"pasa `origen_spread`")
 
     def comision(self, nocional: float, *, maker: bool = False) -> float:
         acciones = nocional / self.precio_referencia

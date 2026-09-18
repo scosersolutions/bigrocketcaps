@@ -45,6 +45,7 @@ from brc.datos import lago, particion
 from brc.datos.particion import Puerta, Ventana
 from brc.datos.sector import SECTORES
 from brc.estudio import azar
+from brc.estudio.horquilla import horquilla_de_equilibrio
 from brc.estudio.eventos import EstudioError, medir, sesion_de_entrada
 
 CLASE = "emision_precio"
@@ -349,6 +350,9 @@ lago. Se suben una vez con:
     print("VEREDICTO:", "REFUTADA" if resultado["refutada"] else "SOBREVIVE (sin coste)")
     print("(el criterio de coste se añade aparte, con el spread medido de la horquilla US)")
 
+    equilibrio = horquilla_de_equilibrio(
+        resultado["resultado"].exceso_medio_pct, DIRECCION)
+
     salida = {
         "hipotesis": "B1", "medido": datetime.now(UTC).isoformat(),
         "n": resultado["resultado"].n, "n_empresas": resultado["resultado"].n_empresas,
@@ -374,7 +378,23 @@ lago. Se suben una vez con:
                      for k, v in resultado["criterios"].items()},
         "refutada_sin_coste": resultado["refutada"],
         "diagnostico_universo": diagnostico,
-        "coste": "PENDIENTE: falta calibrar con data/experimentos/spread_us.json",
+        # El criterio de coste, contestado al reves. Ver
+        # `brc.estudio.horquilla.horquilla_de_equilibrio`: preguntar "¿pasa a X
+        # bps?" exigiria saber cuanto vale X, y la horquilla no se puede medir
+        # gratis. Esto no necesita estimar nada.
+        "coste": {
+            "pregunta": "¿A que horquilla deja de funcionar?",
+            "horquilla_de_equilibrio_bps": equilibrio,
+            "respuesta": (
+                f"aguanta hasta {equilibrio:.0f} bps de horquilla por operacion"
+                if equilibrio > 0 else
+                "no funciona ni con horquilla cero: el exceso ya va en contra "
+                "antes de pagar un solo coste"),
+            "para_comparar": (
+                "la horquilla estimada del universo ronda los 112 bps, y de esa "
+                "cifra hay ~48 % de sesgo demostrado: la cota fiable esta sobre "
+                "los 58 bps. Ver data/experimentos/spread_us.json"),
+        },
     }
     a.salida.parent.mkdir(parents=True, exist_ok=True)
     a.salida.write_text(json.dumps(salida, indent=2, ensure_ascii=False, default=str),

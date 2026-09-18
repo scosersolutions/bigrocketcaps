@@ -79,6 +79,19 @@ jobs:
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add data/experimentos/spread_us.json
+          # Solo se commitea si cambio algo MAS que la marca de tiempo. Sin
+          # esto, cada ejecucion dejaba un commit identico al anterior salvo el
+          # campo `medido`: tres seguidos con la misma mediana de 111,59 bps. El
+          # historial dejaba de leerse como la serie -que es su unico motivo de
+          # existir- y ademas cada commit de adorno es una ocasion de chocar
+          # con quien este tocando el fichero en local.
+          sustancia=$(git diff --staged -U0 -- data/experimentos/spread_us.json \
+            | grep -E '^[+-]' | grep -vE '^(---|[+][+][+])' | grep -vc '"medido"' || true)
+          if [ "$sustancia" -eq 0 ]; then
+            echo "solo cambia la marca de tiempo: no se commitea"
+            git restore --staged data/experimentos/spread_us.json
+            exit 0
+          fi
           # La mediana va en el asunto: asi `git log --oneline` se lee como la
           # serie de la horquilla, sin abrir un solo fichero.
           med=$(python -c "import json;d=json.load(open('data/experimentos/spread_us.json'));print(f\"{d['mediana_de_p90s']:.2f}\")")

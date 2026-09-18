@@ -55,6 +55,35 @@ import polars as pl
 K = 3 - 2 * (2 ** 0.5)
 
 
+def horquilla_de_equilibrio(exceso_medio_pct: float, direccion: str) -> float:
+    """A que horquilla, en bps, una hipotesis deja de ganar dinero.
+
+    ## Por que esta pregunta y no la otra
+
+    El criterio de coste de siempre es "¿pasa el filtro a X bps?", y necesita
+    saber cuanto vale X. Aqui no se sabe: la horquilla no se puede medir gratis
+    -IEX cobra 500 $/mes- y lo que hay es un estimador que sobrestima por lo
+    menos a la mitad. Con esa incertidumbre, un "no pasa" no significa nada.
+
+    Esta pregunta se contesta al reves y no necesita estimar nada: dado el
+    exceso que la hipotesis produce, ¿hasta que coste sigue siendo rentable?
+    Sale del propio backtest, no se puede afinar a conveniencia, y el lector
+    la compara con la realidad que conozca -o con la cota de
+    `cota_por_activo`- sin tener que creerse ningun numero nuestro.
+
+    Ida y vuelta se paga una horquilla ENTERA: media al entrar y media al
+    salir, que es lo que cobra `CostesPorAccion.slippage()` por operacion.
+    Asi que el equilibrio en bps es la ganancia bruta en por ciento por cien.
+
+    Cero significa que no funciona ni siendo gratis operar: el exceso ya va en
+    contra antes de pagar nada. No es un caso raro; es el de B1.
+    """
+    if direccion not in ("corto", "largo"):
+        raise ValueError('direccion debe ser "corto" o "largo"')
+    bruto = -exceso_medio_pct if direccion == "corto" else exceso_medio_pct
+    return round(max(bruto, 0.0) * 100, 2)
+
+
 def _pares_ajustados(precios: pl.DataFrame) -> pl.DataFrame:
     """Pares de sesiones consecutivas, con el salto entre ellas ya corregido.
 

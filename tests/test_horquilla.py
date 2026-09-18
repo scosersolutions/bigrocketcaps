@@ -17,7 +17,8 @@ from brc.estudio.horquilla import (UMBRAL_NEGATIVOS, abdi_ranaldo,
                                    acuerdo_entre_predictores,
                                    cota_por_activo, cota_superior,
                                    corwin_schultz, diagnostico_sesgo,
-                                   frecuencia_negativos, por_mes,
+                                   frecuencia_negativos,
+                                   horquilla_de_equilibrio, por_mes,
                                    resumen_por_activo)
 
 
@@ -275,3 +276,35 @@ class TestLosDosPredictores:
 
     def test_sin_datos_no_inventa_nada(self):
         assert acuerdo_entre_predictores(pl.DataFrame()) == {}
+
+
+class TestHorquillaDeEquilibrio:
+    """El criterio de coste, contestado al reves."""
+
+    def test_una_hipotesis_corta_que_acierta_aguanta_su_exceso(self):
+        """Predice bajada y baja un 0,8 %: aguanta 80 bps de ida y vuelta."""
+        assert horquilla_de_equilibrio(-0.8, "corto") == 80.0
+
+    def test_una_larga_que_acierta_tambien(self):
+        assert horquilla_de_equilibrio(0.8, "largo") == 80.0
+
+    def test_si_el_exceso_va_en_contra_el_equilibrio_es_cero(self):
+        """B1: predice bajada y sube. No funciona ni siendo gratis operar,
+        asi que no hay horquilla que aguante; cero, no un numero negativo."""
+        assert horquilla_de_equilibrio(0.2013, "corto") == 0.0
+
+    def test_ida_y_vuelta_paga_una_horquilla_ENTERA(self):
+        """Media al entrar y media al salir, que es lo que cobra
+        `CostesPorAccion.slippage()` en cada operacion."""
+        from core.quant.costes import CostesPorAccion
+        equilibrio = horquilla_de_equilibrio(-1.0, "corto")   # 100 bps
+        c = CostesPorAccion(spread_bps=equilibrio, procedencia="estimado",
+                            origen_spread="prueba", minimo_orden=0.0,
+                            por_accion=0.0)
+        nocional = 10_000.0
+        ida_y_vuelta = c.slippage(nocional) * 2
+        assert ida_y_vuelta == pytest.approx(nocional * 0.01)   # el 1 % bruto
+
+    def test_una_direccion_inventada_se_rechaza(self):
+        with pytest.raises(ValueError):
+            horquilla_de_equilibrio(-0.5, "lateral")
