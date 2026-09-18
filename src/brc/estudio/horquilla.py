@@ -183,7 +183,8 @@ RAIZ2 = 2 ** 0.5
 UNO_MAS_RAIZ2 = 1 + RAIZ2
 
 
-def cota_superior(precios: pl.DataFrame) -> pl.DataFrame:
+def cota_superior(precios: pl.DataFrame, *,
+                 predictor: str = "doble") -> pl.DataFrame:
     """Cota superior sobre el spread VERDADERO, por sesion.
 
     Tremacoldi-Rossi e Irwin (2021), seccion 5.1. El sesgo del estimador de
@@ -230,7 +231,25 @@ def cota_superior(precios: pl.DataFrame) -> pl.DataFrame:
 
     phi = (1 + (r_max / r_min) ** 2).sqrt()
     sesgo_momento = UNO_MAS_RAIZ2 * r_min * (phi - RAIZ2)
-    sesgo_muestra = UNO_MAS_RAIZ2 * (RAIZ2 * r_min - r_estrella)
+
+    # Los dos predictores del SIGNO del sesgo de muestra pequeña. El articulo
+    # pide reportar ambos cuando no hay spread efectivo con el que validar,
+    # que es exactamente nuestro caso: si coinciden, la cota no depende de
+    # cual se eligio.
+    if predictor == "doble":
+        # Ecuacion (16), la que ellos usan: acierta el signo verdadero mas a
+        # menudo en su muestra.
+        sesgo_muestra = UNO_MAS_RAIZ2 * (RAIZ2 * r_min - r_estrella)
+    else:
+        # Ecuacion (15) con el rango verdadero sustituido por el observado.
+        # Esa sustitucion SOBREestima el sesgo, asi que se le escapan algunos
+        # negativos tomandolos por positivos: sus falsos positivos son
+        # esperados, no ruido.
+        eta0 = (pl.col("_h0").log() + pl.col("_l0").log()) / 2
+        eta1 = (pl.col("_h1").log() + pl.col("_l1").log()) / 2
+        delta_r = r_min - r_max
+        delta_eta = pl.max_horizontal(eta0, eta1) - pl.min_horizontal(eta0, eta1)
+        sesgo_muestra = r_min + UNO_MAS_RAIZ2 * (0.5 * delta_r - delta_eta)
 
     estimacion = corwin_schultz(precios, recortar=False).sort(["activo", "fecha"])
     return (d.sort(["activo", "fecha"])
@@ -244,7 +263,8 @@ def cota_superior(precios: pl.DataFrame) -> pl.DataFrame:
             .select("activo", "fecha", "cota_pct", "estimacion_pct"))
 
 
-def cota_por_activo(precios: pl.DataFrame) -> dict[str, dict]:
+def cota_por_activo(precios: pl.DataFrame, *,
+                   predictor: str = "doble") -> dict[str, dict]:
     """Por activo, y comparando lo comparable.
 
     ## El error que hay que no cometer al leer esto
@@ -265,7 +285,7 @@ def cota_por_activo(precios: pl.DataFrame) -> dict[str, dict]:
     sesiones es, como minimo, sesgo. Es el numero con mas contenido de todo
     el modulo: no depende de creerse el nivel del estimador.
     """
-    cotas = cota_superior(precios)
+    cotas = cota_superior(precios, predictor=predictor)
     if cotas.is_empty():
         return {}
     mensual = (cotas
@@ -290,6 +310,32 @@ def cota_por_activo(precios: pl.DataFrame) -> dict[str, dict]:
             "sesiones_con_cota": sesiones.get(f["activo"], 0),
         }
     return salida
+
+
+def acuerdo_entre_predictores(precios: pl.DataFrame) -> dict[str, float]:
+    """Que fraccion de sesiones acotan IGUAL los dos predictores, por activo.
+
+    El articulo pide reportar los dos "especialmente cuando no se dispone del
+    spread efectivo con el que validar", que es literalmente nuestro caso: no
+    tenemos bid/ask con el que comprobar nada. Si los dos marcan las mismas
+    sesiones, la cota no depende de cual se eligio; si no, elegir uno es una
+    decision que habria que justificar y ahora mismo no habria con que.
+
+    Uno de los dos -el de la ecuacion (15)- sobrestima el sesgo por
+    construccion, asi que se espera que marque de mas. Lo que importa no es
+    que coincidan al 100 %, sino cuanto.
+    """
+    doble = cota_superior(precios, predictor="doble")
+    simple = cota_superior(precios, predictor="simple")
+    if doble.is_empty() and simple.is_empty():
+        return {}
+    marcadas = (doble.select("activo", "fecha").with_columns(pl.lit(True).alias("_d"))
+                .join(simple.select("activo", "fecha").with_columns(pl.lit(True).alias("_s")),
+                      on=["activo", "fecha"], how="full", coalesce=True)
+                .with_columns(pl.col("_d").fill_null(False), pl.col("_s").fill_null(False)))
+    acuerdo = marcadas.group_by("activo").agg(
+        (pl.col("_d") == pl.col("_s")).mean().alias("acuerdo"))
+    return {f["activo"]: round(f["acuerdo"] * 100, 1) for f in acuerdo.to_dicts()}
 
 
 def frecuencia_negativos(

@@ -25,9 +25,9 @@ import duckdb
 import polars as pl
 
 from brc.datos import lago
-from brc.estudio.horquilla import (abdi_ranaldo, corwin_schultz,
-                                   cota_por_activo, diagnostico_sesgo,
-                                   resumen_por_activo)
+from brc.estudio.horquilla import (abdi_ranaldo, acuerdo_entre_predictores,
+                                   corwin_schultz, cota_por_activo,
+                                   diagnostico_sesgo, resumen_por_activo)
 
 #: Los mismos 24 valores que muestreaba el medidor, y por el mismo motivo: van
 #: de AAPL a CLOV a proposito, para cubrir la banda de liquidez entera en vez
@@ -139,6 +139,10 @@ def main() -> int:
     diagnostico = diagnostico_sesgo(precios, metodo=metodo)
     # La cota solo esta derivada para el estimador de rango alto-bajo.
     cotas = cota_por_activo(precios) if a.estimador == "cs" else {}
+    # El articulo pide reportar los dos predictores del signo cuando no
+    # hay spread efectivo con el que validar. No lo hay: esto es lo que
+    # dice si la cota depende de cual se eligio.
+    acuerdo = acuerdo_entre_predictores(precios) if a.estimador == "cs" else {}
     if not resumen:
         print("ningun par de sesiones utilizable")
         return 1
@@ -183,6 +187,8 @@ def main() -> int:
                                  "escalera de liquidez de AAPL a CLOV, elegida "
                                  "para cubrir la banda entera y no una punta"),
         "valores": tabla_de_valores(resumen, diagnostico, cotas),
+        "acuerdo_entre_predictores_pct": (
+            round(statistics.median(list(acuerdo.values())), 1) if acuerdo else None),
         "sesgo_minimo_mediano_pct": (
             round(statistics.median(
                 [v["sesgo_minimo_pct"] for v in cotas.values()]), 1)

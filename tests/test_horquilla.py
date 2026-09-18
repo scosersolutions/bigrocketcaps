@@ -14,6 +14,7 @@ import polars as pl
 import pytest
 
 from brc.estudio.horquilla import (UMBRAL_NEGATIVOS, abdi_ranaldo,
+                                   acuerdo_entre_predictores,
                                    cota_por_activo, cota_superior,
                                    corwin_schultz, diagnostico_sesgo,
                                    frecuencia_negativos, por_mes,
@@ -243,3 +244,34 @@ class TestCotaSuperior:
     def test_sin_datos_no_inventa_nada(self):
         assert cota_superior(pl.DataFrame()).is_empty()
         assert cota_por_activo(pl.DataFrame()) == {}
+
+
+class TestLosDosPredictores:
+    """El articulo pide reportar los dos cuando no hay con que validar."""
+
+    def test_sin_volatilidad_los_dos_dan_la_misma_cota(self):
+        """Con el precio quieto no hay ni diferencia de rangos ni salto
+        vertical, asi que los dos predictores se reducen a lo mismo y el sesgo
+        de momento es cero: las dos cotas son la horquilla exacta."""
+        d = _sesiones("A", [(100.0, 0.02), (100.0, 0.02)])
+        doble = cota_superior(d, predictor="doble")["cota_pct"][0]
+        simple = cota_superior(d, predictor="simple")["cota_pct"][0]
+        assert doble == pytest.approx(2.0, rel=1e-9)
+        assert simple == pytest.approx(doble, rel=1e-9)
+
+    def test_el_de_la_ecuacion_15_marca_al_menos_tantas_sesiones(self):
+        """Sustituir el rango verdadero por el observado SOBREestima el sesgo,
+        asi que ese predictor da positivo mas a menudo: sus falsos positivos
+        son una consecuencia del metodo, no ruido."""
+        d = _sesiones("A", [(100.0, 0.02), (101.0, 0.03), (99.0, 0.01),
+                            (100.5, 0.04), (98.0, 0.02)])
+        assert (cota_superior(d, predictor="simple").height
+                >= cota_superior(d, predictor="doble").height)
+
+    def test_el_acuerdo_es_una_fraccion_por_activo(self):
+        d = _sesiones("A", [(100.0, 0.02)] * 5)
+        a = acuerdo_entre_predictores(d)
+        assert a["A"] == 100.0
+
+    def test_sin_datos_no_inventa_nada(self):
+        assert acuerdo_entre_predictores(pl.DataFrame()) == {}
