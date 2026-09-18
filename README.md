@@ -65,6 +65,68 @@ Todo gratuito, y lo que no se puede obtener gratis se queda fuera y se dice:
 | Constituyentes históricos de índices | — | **Fuera**: no hay fuente gratuita fiable. Se sustituyen por deciles de capitalización reconstruida |
 | Revisiones de analistas, guidance, intradía, préstamo | — | **Fuera** |
 
-## Estado
+## Estado: parado el 2026-09-18
 
-Recién empezado. No hay ninguna hipótesis sellada todavía.
+**Cinco hipótesis selladas, una medida y refutada, cero supervivientes. El
+proyecto se para aquí**, y esta sección existe para que quien lo abra dentro de
+seis meses no tenga que reconstruir por qué.
+
+### Lo que se probó
+
+| | predice | veredicto |
+|---|---|---|
+| **B1** ampliación de capital → presión bajista | corto | **REFUTADA**. +0,201 % de exceso, o sea al revés. El azar lo iguala el 30 % de las veces y cambia de signo entre 2018-2021 y 2022-2024 |
+| **B2** entrada de activista | largo | Sellada, **sin medir válidamente** |
+| **B3** prima de anuncio de resultados | largo | Sellada, **sin medir válidamente** |
+| **B4** quiebra → venta forzada | corto | Sellada, **sin medir válidamente** |
+| **B5** registro de emisión → dilución | corto | Sellada, **sin medir válidamente** |
+
+B2..B5 se midieron una vez y el resultado **se descartó**: el juez cruza los
+eventos contra `sector_empresa`, que solo cubre las 1.780 empresas que
+necesitaba B1, así que se perdía entre el 57 % y el 63 % de los eventos en el
+JOIN. Eso mide «empresas que además hicieron una ampliación de capital», que no
+es lo que ninguno de esos TOML declara. No son resultados flojos: son una
+medición de otra cosa, y por eso no se conservan.
+
+Para medirlas de verdad hay que completar `sector_empresa` (ver
+`brc.datos.sector`, que ya avisaba de esto) y volver a correr `juzgar.py` sin
+tocar un solo pre-registro.
+
+**Aviso para quien retome esto**: los números de esa medición nula se llegaron
+a ver. B3 pasaba cinco de seis criterios y fallaba el del azar. Quien repita la
+medición ya no parte de ciego, y eso tiene que pesar en cuánto se crea el
+resultado.
+
+### Por qué se para
+
+No por la maquinaria, que funciona y está probada. Por dónde apunta.
+
+Estudios de eventos sobre expedientes públicos de EDGAR, a resolución diaria,
+contra la mediana del universo, es terreno minado desde los años ochenta por
+académicos con mejores datos y por fondos con incentivos de miles de millones.
+La probabilidad de que quede ahí una ventaja explotable con datos gratis y a
+resolución de día es muy baja, y esa premisa no se puso a prueba antes de
+construir encima de ella.
+
+### Lo que queda vivo si algún día se retoma
+
+Nada de esto sabe que está mirando acciones US, así que se reapunta a otro
+mercado sin tocarlo:
+
+- `brc.estudio.eventos` — estudio de eventos con las tres trampas tapadas.
+- `brc.estudio.azar` — la puerta que refutó a B1 y a B3. Se ganó el sueldo:
+  B3 tenía `t = +5,19`, que convence a cualquiera, y el sorteo dijo que
+  carteras aleatorias del mismo tamaño lo igualan el 28 % de las veces.
+- `brc.estudio.horquilla` — Corwin-Schultz y Abdi-Ranaldo, con el test de sesgo
+  de Tremacoldi-Rossi e Irwin. Dice que al menos el 48 % de lo que estima es
+  sesgo demostrado.
+- `brc.datos.particion` — la valla exploración/validación, de disco.
+- `scripts/juzgar.py` — juez que LEE el pre-registro sellado, así que no puede
+  medir algo distinto de lo declarado.
+
+### Lo que está apagado
+
+Los dos workflows (`Horquilla US`, `Veredictos`) no tienen cron: solo se lanzan
+a mano. Sus automatizaciones en el Centro de Control quedan **pausadas**, para
+que nadie las dispare por costumbre y para que el vigilante no las cuente como
+caídas.
