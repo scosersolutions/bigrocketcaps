@@ -1,6 +1,6 @@
 {
   "hipotesis": "B1",
-  "medido": "2026-09-17T18:23:32.933186+00:00",
+  "medido": "2026-09-18T21:22:06.053265+00:00",
   "n": 3852,
   "n_empresas": 671,
   "exceso_medio_pct": 0.2013,
@@ -133,5 +133,10 @@
     "tras_60_velas_previas": 3852,
     "empresas_finales": 671
   },
-  "coste": "PENDIENTE: falta calibrar con data/experimentos/spread_us.json"
+  "coste": {
+    "pregunta": "¿A que horquilla deja de funcionar?",
+    "horquilla_de_equilibrio_bps": 0.0,
+    "respuesta": "no funciona ni con horquilla cero: el exceso ya va en contra antes de pagar un solo coste",
+    "para_comparar": "la horquilla estimada del universo ronda los 112 bps, y de esa cifra hay ~48 % de sesgo demostrado: la cota fiable esta sobre los 58 bps. Ver data/experimentos/spread_us.json"
+  }
 }
