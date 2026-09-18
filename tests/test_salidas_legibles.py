@@ -61,13 +61,20 @@ class TestValoresDeLaHorquilla:
         f = H.tabla_de_valores({"A": {"n": 1, "mediana_bps": 1.0,
                                       "p90_bps": 2.0, "max_bps": 3.0}})
         assert set(f[0]) == {"valor", "horquilla_tipica_bps", "mal_mes_bps",
-                             "peor_mes_bps", "meses", "estimaciones_absurdas_pct"}
+                             "peor_mes_bps", "meses", "estimaciones_absurdas_pct",
+                             "sesgo_minimo_pct"}
 
     def test_sin_diagnostico_la_columna_existe_pero_esta_vacia(self):
         """Que falte el dato y que el dato sea cero no son lo mismo."""
         f = H.tabla_de_valores({"A": {"n": 1, "mediana_bps": 1.0,
                                       "p90_bps": 2.0, "max_bps": 3.0}})
         assert f[0]["estimaciones_absurdas_pct"] is None
+
+    def test_el_sesgo_minimo_viaja_con_su_valor(self):
+        f = H.tabla_de_valores(
+            {"A": {"n": 1, "mediana_bps": 1.0, "p90_bps": 2.0, "max_bps": 3.0}},
+            None, {"A": {"sesgo_minimo_pct": 47.5}})
+        assert f[0]["sesgo_minimo_pct"] == 47.5
 
     def test_el_diagnostico_viaja_con_su_valor(self):
         f = H.tabla_de_valores(
